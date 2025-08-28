@@ -1,0 +1,160 @@
+{
+  "movies": [
+    {
+      "id": 1,
+      "title": "The Dark Knight",
+      "description": "When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.",
+      "genre": "Action",
+      "director": "Christopher Nolan",
+      "duration": 152,
+      "releaseDate": "2008-07-18",
+      "posterUrl": "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+      "active": true,
+      "createdAt": "2024-01-15T10:30:00Z",
+      "theater": {
+        "id": 1,
+        "name": "Grand Cinema",
+        "city": "New York"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Inception",
+      "description": "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
+      "genre": "Sci-Fi",
+      "director": "Christopher Nolan",
+      "duration": 148,
+      "releaseDate": "2010-07-16",
+      "posterUrl": "https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg",
+      "active": true,
+      "createdAt": "2024-01-16T14:20:00Z",
+      "theater": {
+        "id": 2,
+        "name": "Metro Theater",
+        "city": "Los Angeles"
+      }
+    },
+    {
+      "id": 3,
+      "title": "The Shawshank Redemption",
+      "description": "Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.",
+      "genre": "Drama",
+      "director": "Frank Darabont",
+      "duration": 142,
+      "releaseDate": "1994-09-23",
+      "posterUrl": "https://image.tmdb.org/t/p/w500/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg",
+      "active": true,
+      "createdAt": "2024-01-17T09:15:00Z",
+      "theater": {
+        "id": 1,
+        "name": "Grand Cinema",
+        "city": "New York"
+      }
+    }
+  ],
+  "theaters": [
+    {
+      "id": 1,
+      "name": "Grand Cinema",
+      "address": "123 Broadway Street",
+      "city": "New York",
+      "capacity": 300,
+      "approved": true,
+      "active": true,
+      "owner": {
+        "id": 2,
+        "firstName": "John",
+        "lastName": "Smith"
+      }
+    },
+    {
+      "id": 2,
+      "name": "Metro Theater",
+      "address": "456 Hollywood Blvd",
+      "city": "Los Angeles",
+      "capacity": 250,
+      "approved": true,
+      "active": true,
+      "owner": {
+        "id": 3,
+        "firstName": "Jane",
+        "lastName": "Doe"
+      }
+    },
+    {
+      "id": 3,
+      "name": "Downtown Cinema",
+      "address": "789 Main Street",
+      "city": "Chicago",
+      "capacity": 180,
+      "approved": true,
+      "active": true,
+      "owner": {
+        "id": 4,
+        "firstName": "Mike",
+        "lastName": "Johnson"
+      }
+    }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "firstName": "Admin",
+      "lastName": "User",
+      "email": "admin@moviehub.com",
+      "phone": "+1-555-0123",
+      "role": "ADMIN",
+      "active": true,
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": 2,
+      "firstName": "John",
+      "lastName": "Smith",
+      "email": "john.smith@example.com",
+      "phone": "+1-555-0124",
+      "role": "THEATER_OWNER",
+      "active": true,
+      "createdAt": "2024-01-05T10:30:00Z"
+    },
+    {
+      "id": 3,
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "email": "jane.doe@example.com",
+      "phone": "+1-555-0125",
+      "role": "THEATER_OWNER",
+      "active": true,
+      "createdAt": "2024-01-06T14:20:00Z"
+    },
+    {
+      "id": 4,
+      "firstName": "Mike",
+      "lastName": "Johnson",
+      "email": "mike.johnson@example.com",
+      "phone": "+1-555-0126",
+      "role": "THEATER_OWNER",
+      "active": true,
+      "createdAt": "2024-01-07T09:15:00Z"
+    },
+    {
+      "id": 5,
+      "firstName": "Sarah",
+      "lastName": "Wilson",
+      "email": "sarah.wilson@example.com",
+      "phone": "+1-555-0127",
+      "role": "CUSTOMER",
+      "active": true,
+      "createdAt": "2024-01-10T16:45:00Z"
+    },
+    {
+      "id": 6,
+      "role": "CUSTOMER",
+      "firstName": "SAJID",
+      "lastName": "SHAIKH",
+      "email": "ss2728303@gmail.com",
+      "password": "sajidsai",
+      "createdAt": "2025-08-28T20:08:16.883Z"
+    }
+  ]
+}
