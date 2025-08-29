@@ -104,4 +104,22 @@ export const scheduleService = {
     const response = await apiClient.patch(`/schedules/${id}/status`, { active });
     return response.data;
   },
+
+  // Submit schedule for approval (owner action)
+  async submitForApproval(id: number): Promise<Schedule> {
+    const response = await apiClient.post(`/schedules/${id}/submit-for-approval`);
+    return response.data as Schedule;
+  },
+
+  // Set schedule on-sale (admin action, requires APPROVED)
+  async setOnSale(id: number): Promise<Schedule> {
+    const response = await apiClient.patch(`/schedules/${id}/on-sale`);
+    return response.data as Schedule;
+  },
+
+  // Cancel schedule (admin action)
+  async cancel(id: number): Promise<Schedule> {
+    const response = await apiClient.patch(`/schedules/${id}/cancel`);
+    return response.data as Schedule;
+  },
 };

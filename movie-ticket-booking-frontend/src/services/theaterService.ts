@@ -56,6 +56,24 @@ export const theaterService = {
     return response.data;
   },
 
+  // Submit theater for approval (owner action)
+  async submitForApproval(id: number): Promise<Theater> {
+    const response = await apiClient.post(`/theaters/${id}/submit-for-approval`);
+    return response.data;
+  },
+
+  // Activate theater (admin action)
+  async activate(id: number): Promise<Theater> {
+    const response = await apiClient.patch(`/theaters/${id}/activate`);
+    return response.data;
+  },
+
+  // Deactivate theater (admin action)
+  async deactivate(id: number): Promise<Theater> {
+    const response = await apiClient.patch(`/theaters/${id}/deactivate`);
+    return response.data;
+  },
+
   // Get theater statistics
   async getTheaterStats(id: number): Promise<{
     totalBookings: number;
