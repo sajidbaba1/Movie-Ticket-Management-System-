@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create an axios instance with default configuration
 const apiClient = axios.create({
-  baseURL: 'http://localhost:3001',
+  baseURL: 'http://localhost:8080/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -12,7 +12,12 @@ const apiClient = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // Add any auth headers here if needed
+    // Add auth token if available
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
     console.log(`Making ${config.method?.toUpperCase()} request to ${config.url}`);
     return config;
   },

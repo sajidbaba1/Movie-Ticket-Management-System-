@@ -62,7 +62,7 @@ const TheatersPage: React.FC = () => {
   return (
     <div className="p-6">
       <TheaterList
-        theaters={theaters}
+        theaters={theaters as Theater[]}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onCreateNew={handleCreateNew}

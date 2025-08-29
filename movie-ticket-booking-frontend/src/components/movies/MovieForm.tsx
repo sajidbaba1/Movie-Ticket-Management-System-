@@ -1,9 +1,9 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import type { Movie, CreateMovieRequest } from '../../types';
+import type { Movie, CreateMovieRequest, Theater } from '../../types';
 import { Button, Input, Select, Textarea } from '../ui';
 import { MOVIE_GENRES, VALIDATION } from '../../constants';
-import { useTheaters } from '../../hooks';
+import { useTheaters } from '../../hooks/useTheaters';
 
 interface MovieFormProps {
   movie?: Movie;
@@ -44,7 +44,7 @@ const MovieForm: React.FC<MovieFormProps> = ({
 
   const theaterOptions = [
     { value: '', label: 'Select a theater (optional)' },
-    ...theaters.map(theater => ({
+    ...(theaters as Theater[]).map((theater: Theater) => ({
       value: theater.id.toString(),
       label: theater.name
     }))

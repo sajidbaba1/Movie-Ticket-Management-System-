@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTheater, useUpdateTheater } from '../../hooks/useTheaters';
 import { TheaterForm } from '../../components/theaters';
 import type { CreateTheaterRequest } from '../../types';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 const EditTheaterPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -83,8 +83,8 @@ const EditTheaterPage: React.FC = () => {
         <TheaterForm
           theater={theater}
           onSubmit={handleSubmit}
+          onCancel={() => navigate(`/theaters/${theater.id}`)}
           isLoading={updateTheaterMutation.isPending}
-          isEdit={true}
         />
       </div>
     </div>

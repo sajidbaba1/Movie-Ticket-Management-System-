@@ -9,28 +9,37 @@ interface MovieCardProps {
   onEdit?: (movie: Movie) => void;
   onDelete?: (movie: Movie) => void;
   showActions?: boolean;
+  customerView?: boolean;
 }
 
 const MovieCard: React.FC<MovieCardProps> = ({
   movie,
   onEdit,
   onDelete,
-  showActions = true
+  showActions = true,
+  customerView = false
 }) => {
   return (
     <Card className="movie-card group" padding="none">
       <div className="relative">
         {/* Movie Poster */}
-        <div className="aspect-w-2 aspect-h-3 bg-gray-200">
+        <div className="aspect-w-2 aspect-h-3 bg-gray-200 relative overflow-hidden rounded-t-xl">
           {movie.posterUrl ? (
             <img
               src={movie.posterUrl}
               alt={movie.title}
-              className="w-full h-48 object-cover"
+              className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
-            <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+            <div className="w-full h-48 bg-gray-200 flex items-center justify-center group-hover:bg-gray-300 transition-colors duration-300">
               <span className="text-4xl text-gray-400">🎬</span>
+            </div>
+          )}
+          {customerView && (
+            <div className="absolute top-2 right-2">
+              <span className="bg-primary-600 text-white text-xs font-medium px-2 py-1 rounded-full">
+                {movie.genre}
+              </span>
             </div>
           )}
         </div>
@@ -63,29 +72,48 @@ const MovieCard: React.FC<MovieCardProps> = ({
           {/* Actions */}
           {showActions && (
             <div className="flex gap-2">
-              <Link
-                to={`/movies/${movie.id}`}
-                className="flex-1 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium py-2 px-3 rounded-lg text-center transition-colors duration-200"
-              >
-                View Details
-              </Link>
+              {customerView ? (
+                <>
+                  <Link
+                    to={`/customer/movies/${movie.id}`}
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium py-2 px-3 rounded-lg text-center transition-colors duration-200"
+                  >
+                    Details
+                  </Link>
+                  <Link
+                    to={`/customer/movies/${movie.id}/book`}
+                    className="flex-1 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium py-2 px-3 rounded-lg text-center transition-colors duration-200"
+                  >
+                    Book Now
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to={`/movies/${movie.id}`}
+                    className="flex-1 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium py-2 px-3 rounded-lg text-center transition-colors duration-200"
+                  >
+                    View Details
+                  </Link>
 
-              {onEdit && (
-                <button
-                  onClick={() => onEdit(movie)}
-                  className="bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium py-2 px-3 rounded-lg transition-colors duration-200"
-                >
-                  Edit
-                </button>
-              )}
+                  {onEdit && (
+                    <button
+                      onClick={() => onEdit(movie)}
+                      className="bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium py-2 px-3 rounded-lg transition-colors duration-200"
+                    >
+                      Edit
+                    </button>
+                  )}
 
-              {onDelete && (
-                <button
-                  onClick={() => onDelete(movie)}
-                  className="bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-3 rounded-lg transition-colors duration-200"
-                >
-                  Delete
-                </button>
+                  {onDelete && (
+                    <button
+                      onClick={() => onDelete(movie)}
+                      className="bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-3 rounded-lg transition-colors duration-200"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </>
               )}
             </div>
           )}

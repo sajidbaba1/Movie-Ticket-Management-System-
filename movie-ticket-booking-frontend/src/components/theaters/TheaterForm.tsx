@@ -1,39 +1,26 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import type { CreateTheaterRequest, Theater } from '../../types';
-import { Button, Input, Card } from '../ui';
-
-interface TheaterFormData {
-  name: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  phoneNumber?: string;
-  email?: string;
-  totalScreens: number;
-  description?: string;
-  ownerId: number;
-}
+import type { Theater, CreateTheaterRequest } from '../../types';
+import { Button, Input, Select, Textarea } from '../ui';
 
 interface TheaterFormProps {
   theater?: Theater;
   onSubmit: (data: CreateTheaterRequest) => void;
+  onCancel: () => void;
   isLoading?: boolean;
-  isEdit?: boolean;
 }
 
 const TheaterForm: React.FC<TheaterFormProps> = ({
   theater,
   onSubmit,
-  isLoading = false,
-  isEdit = false
+  onCancel,
+  isLoading = false
 }) => {
   const {
     register,
     handleSubmit,
     formState: { errors }
-  } = useForm<TheaterFormData>({
+  } = useForm<CreateTheaterRequest>({
     defaultValues: theater ? {
       name: theater.name,
       address: theater.address,
@@ -42,252 +29,215 @@ const TheaterForm: React.FC<TheaterFormProps> = ({
       zipCode: theater.zipCode,
       phoneNumber: theater.phoneNumber || '',
       email: theater.email || '',
-      description: theater.description || '',
       totalScreens: theater.totalScreens,
-      ownerId: theater.owner.id
+      description: theater.description || '',
     } : {
-      totalScreens: 1,
-      ownerId: 1
+      totalScreens: 1
     }
   });
 
-  const onFormSubmit = (data: TheaterFormData) => {
-    // Transform form data to API format
-    const { ownerId, ...theaterData } = data;
-    const createRequest: CreateTheaterRequest = {
-      ...theaterData,
-      owner: { id: ownerId }
-    };
-    onSubmit(createRequest);
-  };
+  const stateOptions = [
+    { value: '', label: 'Select State' },
+    { value: 'AL', label: 'Alabama' },
+    { value: 'AK', label: 'Alaska' },
+    { value: 'AZ', label: 'Arizona' },
+    { value: 'AR', label: 'Arkansas' },
+    { value: 'CA', label: 'California' },
+    { value: 'CO', label: 'Colorado' },
+    { value: 'CT', label: 'Connecticut' },
+    { value: 'DE', label: 'Delaware' },
+    { value: 'FL', label: 'Florida' },
+    { value: 'GA', label: 'Georgia' },
+    { value: 'HI', label: 'Hawaii' },
+    { value: 'ID', label: 'Idaho' },
+    { value: 'IL', label: 'Illinois' },
+    { value: 'IN', label: 'Indiana' },
+    { value: 'IA', label: 'Iowa' },
+    { value: 'KS', label: 'Kansas' },
+    { value: 'KY', label: 'Kentucky' },
+    { value: 'LA', label: 'Louisiana' },
+    { value: 'ME', label: 'Maine' },
+    { value: 'MD', label: 'Maryland' },
+    { value: 'MA', label: 'Massachusetts' },
+    { value: 'MI', label: 'Michigan' },
+    { value: 'MN', label: 'Minnesota' },
+    { value: 'MS', label: 'Mississippi' },
+    { value: 'MO', label: 'Missouri' },
+    { value: 'MT', label: 'Montana' },
+    { value: 'NE', label: 'Nebraska' },
+    { value: 'NV', label: 'Nevada' },
+    { value: 'NH', label: 'New Hampshire' },
+    { value: 'NJ', label: 'New Jersey' },
+    { value: 'NM', label: 'New Mexico' },
+    { value: 'NY', label: 'New York' },
+    { value: 'NC', label: 'North Carolina' },
+    { value: 'ND', label: 'North Dakota' },
+    { value: 'OH', label: 'Ohio' },
+    { value: 'OK', label: 'Oklahoma' },
+    { value: 'OR', label: 'Oregon' },
+    { value: 'PA', label: 'Pennsylvania' },
+    { value: 'RI', label: 'Rhode Island' },
+    { value: 'SC', label: 'South Carolina' },
+    { value: 'SD', label: 'South Dakota' },
+    { value: 'TN', label: 'Tennessee' },
+    { value: 'TX', label: 'Texas' },
+    { value: 'UT', label: 'Utah' },
+    { value: 'VT', label: 'Vermont' },
+    { value: 'VA', label: 'Virginia' },
+    { value: 'WA', label: 'Washington' },
+    { value: 'WV', label: 'West Virginia' },
+    { value: 'WI', label: 'Wisconsin' },
+    { value: 'WY', label: 'Wyoming' }
+  ];
 
   return (
-    <Card className="max-w-2xl mx-auto" padding="lg">
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            {isEdit ? 'Edit Theater' : 'Create New Theater'}
-          </h2>
-          <p className="text-gray-600 mt-1">
-            {isEdit ? 'Update theater information' : 'Add a new theater to the system'}
-          </p>
-        </div>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Input
+          label="Theater Name"
+          {...register('name', {
+            required: 'Theater name is required',
+            maxLength: {
+              value: 100,
+              message: 'Theater name must be less than 100 characters'
+            }
+          })}
+          error={errors.name?.message}
+          placeholder="Enter theater name"
+          required
+        />
 
-        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
-          {/* Theater Name */}
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-              Theater Name *
-            </label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Enter theater name"
-              {...register('name', {
-                required: 'Theater name is required',
-                minLength: {
-                  value: 2,
-                  message: 'Theater name must be at least 2 characters'
-                }
-              })}
-              error={errors.name?.message}
-            />
-          </div>
+        <Input
+          label="Total Screens"
+          type="number"
+          {...register('totalScreens', {
+            required: 'Number of screens is required',
+            min: {
+              value: 1,
+              message: 'Theater must have at least 1 screen'
+            },
+            max: {
+              value: 50,
+              message: 'Theater cannot have more than 50 screens'
+            }
+          })}
+          error={errors.totalScreens?.message}
+          placeholder="1"
+          required
+        />
 
-          {/* Address */}
-          <div>
-            <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-              Address *
-            </label>
-            <Input
-              id="address"
-              type="text"
-              placeholder="Enter street address"
-              {...register('address', {
-                required: 'Address is required'
-              })}
-              error={errors.address?.message}
-            />
-          </div>
+        <Input
+          label="Phone Number"
+          type="tel"
+          {...register('phoneNumber', {
+            pattern: {
+              value: /^[\+]?[1-9][\d]{0,15}$/,
+              message: 'Please enter a valid phone number'
+            }
+          })}
+          error={errors.phoneNumber?.message}
+          placeholder="+1 (555) 123-4567"
+        />
 
-          {/* City, State, Zip Code */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
-                City *
-              </label>
-              <Input
-                id="city"
-                type="text"
-                placeholder="Enter city"
-                {...register('city', {
-                  required: 'City is required'
-                })}
-                error={errors.city?.message}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
-                State *
-              </label>
-              <Input
-                id="state"
-                type="text"
-                placeholder="Enter state"
-                {...register('state', {
-                  required: 'State is required'
-                })}
-                error={errors.state?.message}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-1">
-                Zip Code *
-              </label>
-              <Input
-                id="zipCode"
-                type="text"
-                placeholder="Enter zip code"
-                {...register('zipCode', {
-                  required: 'Zip code is required',
-                  pattern: {
-                    value: /^\d{5}(-\d{4})?$/,
-                    message: 'Please enter a valid zip code'
-                  }
-                })}
-                error={errors.zipCode?.message}
-              />
-            </div>
-          </div>
-
-          {/* Contact Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                Phone Number
-              </label>
-              <Input
-                id="phoneNumber"
-                type="tel"
-                placeholder="Enter phone number"
-                {...register('phoneNumber', {
-                  pattern: {
-                    value: /^[+]?[1-9][\d]{0,15}$/,
-                    message: 'Please enter a valid phone number'
-                  }
-                })}
-                error={errors.phoneNumber?.message}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter email address"
-                {...register('email', {
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Please enter a valid email address'
-                  }
-                })}
-                error={errors.email?.message}
-              />
-            </div>
-          </div>
-
-          {/* Total Screens */}
-          <div>
-            <label htmlFor="totalScreens" className="block text-sm font-medium text-gray-700 mb-1">
-              Total Screens *
-            </label>
-            <Input
-              id="totalScreens"
-              type="number"
-              min="1"
-              placeholder="Enter number of screens"
-              {...register('totalScreens', {
-                required: 'Number of screens is required',
-                min: {
-                  value: 1,
-                  message: 'Theater must have at least 1 screen'
-                },
-                max: {
-                  value: 50,
-                  message: 'Maximum 50 screens allowed'
-                },
-                valueAsNumber: true
-              })}
-              error={errors.totalScreens?.message}
-            />
-          </div>
-
-          {/* Owner ID (for admin use) */}
-          <div>
-            <label htmlFor="ownerId" className="block text-sm font-medium text-gray-700 mb-1">
-              Owner ID *
-            </label>
-            <Input
-              id="ownerId"
-              type="number"
-              placeholder="Enter owner user ID"
-              {...register('ownerId', {
-                required: 'Owner ID is required',
-                min: {
-                  value: 1,
-                  message: 'Please enter a valid owner ID'
-                },
-                valueAsNumber: true
-              })}
-              error={errors.ownerId?.message}
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
-              id="description"
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-vertical"
-              placeholder="Enter theater description..."
-              {...register('description')}
-            />
-            {errors.description && (
-              <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
-            )}
-          </div>
-
-          {/* Submit Button */}
-          <div className="flex gap-4 pt-4">
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              className="flex-1"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Saving...' : isEdit ? 'Update Theater' : 'Create Theater'}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              onClick={() => window.history.back()}
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
+        <Input
+          label="Email"
+          type="email"
+          {...register('email', {
+            pattern: {
+              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+              message: 'Please enter a valid email address'
+            }
+          })}
+          error={errors.email?.message}
+          placeholder="theater@example.com"
+        />
       </div>
-    </Card>
+
+      <Input
+        label="Address"
+        {...register('address', {
+          required: 'Address is required',
+          maxLength: {
+            value: 200,
+            message: 'Address must be less than 200 characters'
+          }
+        })}
+        error={errors.address?.message}
+        placeholder="Enter theater address"
+        required
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Input
+          label="City"
+          {...register('city', {
+            required: 'City is required',
+            maxLength: {
+              value: 50,
+              message: 'City name must be less than 50 characters'
+            }
+          })}
+          error={errors.city?.message}
+          placeholder="Enter city"
+          required
+        />
+
+        <Select
+          label="State"
+          {...register('state', { required: 'State is required' })}
+          options={stateOptions}
+          error={errors.state?.message}
+          placeholder="Select state"
+          required
+        />
+
+        <Input
+          label="ZIP Code"
+          {...register('zipCode', {
+            required: 'ZIP code is required',
+            pattern: {
+              value: /^\d{5}(-\d{4})?$/,
+              message: 'Please enter a valid ZIP code (12345 or 12345-6789)'
+            }
+          })}
+          error={errors.zipCode?.message}
+          placeholder="12345"
+          required
+        />
+      </div>
+
+      <Textarea
+        label="Description (Optional)"
+        {...register('description', {
+          maxLength: {
+            value: 500,
+            message: 'Description must be less than 500 characters'
+          }
+        })}
+        error={errors.description?.message}
+        placeholder="Describe your theater, amenities, and special features..."
+        rows={4}
+      />
+
+      <div className="flex gap-4 pt-4">
+        <Button
+          type="submit"
+          loading={isLoading}
+          className="flex-1"
+        >
+          {theater ? 'Update Theater' : 'Create Theater'}
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isLoading}
+        >
+          Cancel
+        </Button>
+      </div>
+    </form>
   );
 };
 

@@ -35,18 +35,49 @@ export interface User {
   password?: string; // Optional for display purposes
   firstName: string;
   lastName: string;
+  phone?: string;
   role: UserRole;
   active: boolean;
   createdAt: string; // ISO date string
 }
 
 export const UserRole = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
   ADMIN: 'ADMIN',
   THEATER_OWNER: 'THEATER_OWNER',
   CUSTOMER: 'CUSTOMER'
 } as const;
 
 export type UserRole = typeof UserRole[keyof typeof UserRole];
+
+export interface Schedule {
+  id: number;
+  movie: Movie;
+  theater: Theater;
+  showTime: string; // ISO date string
+  price: number;
+  availableSeats: number;
+  totalSeats: number;
+  active: boolean;
+  createdAt: string; // ISO date string
+  screenNumber?: string;
+  additionalInfo?: string;
+}
+
+export interface CreateScheduleRequest {
+  movie: {
+    id: number;
+  };
+  theater: {
+    id: number;
+  };
+  showTime: string; // ISO date string
+  price: number;
+  availableSeats: number;
+  totalSeats: number;
+  screenNumber?: string;
+  additionalInfo?: string;
+}
 
 export interface CreateMovieRequest {
   title: string;
@@ -81,6 +112,7 @@ export interface CreateUserRequest {
   password: string;
   firstName: string;
   lastName: string;
+  phone?: string;
   role: UserRole;
 }
 

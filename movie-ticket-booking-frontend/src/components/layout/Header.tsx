@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { classNames } from '../../utils';
 import { ROUTES } from '../../constants';
+import toast from 'react-hot-toast';
 
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   // Handle scroll effect
   useEffect(() => {
@@ -20,7 +25,14 @@ const Header: React.FC = () => {
   // Close mobile menu when location changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
+    setShowUserMenu(false);
   }, [location]);
+
+  const handleLogout = () => {
+    logout();
+    toast.success('Logged out successfully');
+    navigate('/login');
+  };
 
   const navigation = [
     {
@@ -102,15 +114,56 @@ const Header: React.FC = () => {
                 <span className="absolute top-1 right-1 h-2 w-2 bg-error-500 rounded-full"></span>
               </button>
 
-              {/* User Avatar */}
-              <div className="flex items-center space-x-3">
-                <div className="text-right hidden sm:block">
-                  <div className="text-sm font-medium text-gray-900">Admin User</div>
-                  <div className="text-xs text-gray-500">System Administrator</div>
-                </div>
-                <div className="h-9 w-9 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-sm">
-                  <span className="text-sm font-semibold text-white">A</span>
-                </div>
+              {/* User Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                >
+                  <div className="text-right hidden sm:block">
+                    <div className="text-sm font-medium text-gray-900">
+                      {user?.firstName} {user?.lastName}
+                    </div>
+                    <div className="text-xs text-gray-500">{user?.role}</div>
+                  </div>
+                  <div className="h-9 w-9 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-sm">
+                    <span className="text-sm font-semibold text-white">
+                      {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                    </span>
+                  </div>
+                </button>
+
+                {/* Dropdown Menu */}
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <div className="text-sm font-medium text-gray-900">{user?.firstName} {user?.lastName}</div>
+                      <div className="text-xs text-gray-500">{user?.email}</div>
+                    </div>
+                    <button
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <span className="mr-2">👤</span>
+                      Profile
+                    </button>
+                    <button
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <span className="mr-2">⚙️</span>
+                      Settings
+                    </button>
+                    <hr className="my-1" />
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <span className="mr-2">🚪</span>
+                      Sign Out
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -187,19 +240,30 @@ const Header: React.FC = () => {
               <div className="px-6 py-6 border-t border-gray-200">
                 <div className="flex items-center space-x-3">
                   <div className="h-10 w-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center">
-                    <span className="text-sm font-semibold text-white">A</span>
+                    <span className="text-sm font-semibold text-white">
+                      {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                    </span>
                   </div>
                   <div>
-                    <div className="text-base font-medium text-gray-900">Admin User</div>
-                    <div className="text-sm text-gray-500">admin@moviehub.com</div>
+                    <div className="text-base font-medium text-gray-900">
+                      {user?.firstName} {user?.lastName}
+                    </div>
+                    <div className="text-sm text-gray-500">{user?.email}</div>
                   </div>
                 </div>
                 <div className="mt-4 space-y-2">
                   <button className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                    <span>👤</span>
+                    <span>Profile</span>
+                  </button>
+                  <button className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
                     <span>⚙️</span>
                     <span>Settings</span>
                   </button>
-                  <button className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
                     <span>🚪</span>
                     <span>Sign Out</span>
                   </button>

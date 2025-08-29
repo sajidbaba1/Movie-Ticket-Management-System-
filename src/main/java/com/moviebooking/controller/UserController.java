@@ -1,6 +1,5 @@
 package com.moviebooking.controller;
 
-
 import com.moviebooking.entity.User;
 import com.moviebooking.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +19,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:5173")
 @Tag(name = "User Management", description = "APIs for managing users in the ticket booking system")
 public class UserController {
 
@@ -30,9 +29,8 @@ public class UserController {
     @GetMapping
     @Operation(summary = "Get all users", description = "Retrieve a list of all users")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved users",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved users", content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public List<User> getAllUsers() {
         return userRepository.findAll();
@@ -41,10 +39,9 @@ public class UserController {
     @GetMapping("/{id}")
     @Operation(summary = "Get user by ID", description = "Retrieve a specific user by their ID")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved user",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))),
-        @ApiResponse(responseCode = "404", description = "User not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved user", content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<User> getUserById(
             @Parameter(description = "User ID", required = true) @PathVariable Long id) {
@@ -55,10 +52,9 @@ public class UserController {
     @PostMapping
     @Operation(summary = "Create new user", description = "Add a new user to the system")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "User created successfully",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid input data"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "200", description = "User created successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public User createUser(
             @Parameter(description = "User object", required = true) @RequestBody User user) {
@@ -68,11 +64,10 @@ public class UserController {
     @PutMapping("/{id}")
     @Operation(summary = "Update user", description = "Update an existing user's information")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "User updated successfully",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))),
-        @ApiResponse(responseCode = "404", description = "User not found"),
-        @ApiResponse(responseCode = "400", description = "Invalid input data"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "200", description = "User updated successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<User> updateUser(
             @Parameter(description = "User ID", required = true) @PathVariable Long id,
@@ -94,9 +89,9 @@ public class UserController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete user", description = "Delete a user from the system")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "204", description = "User deleted successfully"),
-        @ApiResponse(responseCode = "404", description = "User not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "204", description = "User deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<Void> deleteUser(
             @Parameter(description = "User ID", required = true) @PathVariable Long id) {

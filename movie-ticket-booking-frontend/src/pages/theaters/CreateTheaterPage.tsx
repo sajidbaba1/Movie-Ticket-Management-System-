@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCreateTheater } from '../../hooks/useTheaters';
 import { TheaterForm } from '../../components/theaters';
 import type { CreateTheaterRequest } from '../../types';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 const CreateTheaterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -34,8 +34,8 @@ const CreateTheaterPage: React.FC = () => {
 
         <TheaterForm
           onSubmit={handleSubmit}
+          onCancel={() => navigate('/theaters')}
           isLoading={createTheaterMutation.isPending}
-          isEdit={false}
         />
       </div>
     </div>

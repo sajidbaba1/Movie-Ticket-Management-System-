@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useMovies, useDeleteMovie, useMovieSearch } from '../../hooks';
 import { MovieList } from '../../components/movies';
 import { Button, Input, Select, Alert } from '../../components/ui';
@@ -11,6 +11,7 @@ const MoviesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
   const [showActiveOnly, setShowActiveOnly] = useState(true);
+  const navigate = useNavigate();
 
   // Hooks for data fetching and mutations
   const { data: allMovies = [], isLoading, error } = useMovies();
@@ -33,8 +34,8 @@ const MoviesPage: React.FC = () => {
   }, [allMovies, searchResults, searchQuery, selectedGenre, showActiveOnly]);
 
   const handleEdit = (movie: Movie) => {
-    // Navigate to edit page
-    window.location.href = `/movies/${movie.id}/edit`;
+    // Navigate to edit page using React Router
+    navigate(`/movies/${movie.id}/edit`);
   };
 
   const handleDelete = async (movie: Movie) => {

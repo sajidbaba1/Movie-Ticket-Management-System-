@@ -1,12 +1,15 @@
 ﻿package com.moviebooking.controller;
 
 import com.moviebooking.entity.Theater;
+import com.moviebooking.entity.User;
 import com.moviebooking.repository.TheaterRepository;
+import com.moviebooking.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,12 +22,43 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/api/theaters")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:5173")
 @Tag(name = "Theater Management", description = "APIs for managing theaters in the ticket booking system")
 public class TheaterController {
 
     @Autowired
     private TheaterRepository theaterRepository;
+
+    @Autowired
+    private AuthService authService;
+
+    @GetMapping("/my-theaters")
+    @Operation(summary = "Get my theaters", description = "Retrieve all theaters owned by the authenticated user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved theaters", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Theater.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<List<Theater>> getMyTheaters(
+            @Parameter(description = "Authorization header with Bearer token", required = true) @RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).build();
+            }
+
+            String token = authHeader.substring(7);
+            User user = authService.validateToken(token);
+
+            if (user != null) {
+                List<Theater> theaters = theaterRepository.findByOwnerId(user.getId());
+                return ResponseEntity.ok(theaters);
+            } else {
+                return ResponseEntity.status(401).build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
 
     @GetMapping
     @Operation(summary = "Get all theaters", description = "Retrieve a list of all approved and active theaters")
@@ -97,6 +131,16 @@ public class TheaterController {
         Optional<Theater> theater = theaterRepository.findById(id);
         if (theater.isPresent()) {
             Theater updatedTheater = theater.get();
+            updatedTheater.setName(theaterDetails.getName());
+            updatedTheater.setAddress(theaterDetails.getAddress());
+            updatedTheater.setCity(theaterDetails.getCity());
+            updatedTheater.setState(theaterDetails.getState());
+            updatedTheater.setZipCode(theaterDetails.getZipCode());
+            updatedTheater.setPhoneNumber(theaterDetails.getPhoneNumber());
+            updatedTheater.setEmail(theaterDetails.getEmail());
+            updatedTheater.setTotalScreens(theaterDetails.getTotalScreens());
+            updatedTheater.setDescription(theaterDetails.getDescription());
+            updatedTheater.setActive(theaterDetails.isActive());
             return ResponseEntity.ok(theaterRepository.save(updatedTheater));
         } else {
             return ResponseEntity.notFound().build();
@@ -116,6 +160,27 @@ public class TheaterController {
         if (theater.isPresent()) {
             theaterRepository.delete(theater.get());
             return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PatchMapping("/{id}/status")
+    @Operation(summary = "Toggle theater status", description = "Activate or deactivate a theater")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Theater status updated successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Theater.class))),
+            @ApiResponse(responseCode = "404", description = "Theater not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<Theater> toggleTheaterStatus(
+            @Parameter(description = "Theater ID", required = true) @PathVariable Long id,
+            @Parameter(description = "Status object with active field", required = true) @RequestBody Map<String, Boolean> statusMap) {
+        Optional<Theater> theater = theaterRepository.findById(id);
+        if (theater.isPresent()) {
+            Theater updatedTheater = theater.get();
+            updatedTheater.setActive(statusMap.get("active"));
+            return ResponseEntity.ok(theaterRepository.save(updatedTheater));
         } else {
             return ResponseEntity.notFound().build();
         }

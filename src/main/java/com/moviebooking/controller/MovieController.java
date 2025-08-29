@@ -19,7 +19,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/api/movies")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:5173")
 @Tag(name = "Movie Management", description = "APIs for managing movies in the ticket booking system")
 public class MovieController {
 
@@ -29,9 +29,8 @@ public class MovieController {
     @GetMapping
     @Operation(summary = "Get all movies", description = "Retrieve a list of all movies")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved movies",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Movie.class))),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved movies", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Movie.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public List<Movie> getAllMovies() {
         return movieRepository.findByActiveTrue();
@@ -40,10 +39,9 @@ public class MovieController {
     @GetMapping("/{id}")
     @Operation(summary = "Get movie by ID", description = "Retrieve a specific movie by its ID")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved movie",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Movie.class))),
-        @ApiResponse(responseCode = "404", description = "Movie not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved movie", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Movie.class))),
+            @ApiResponse(responseCode = "404", description = "Movie not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<Movie> getMovieById(
             @Parameter(description = "Movie ID", required = true) @PathVariable Long id) {
@@ -54,9 +52,8 @@ public class MovieController {
     @GetMapping("/theater/{theaterId}")
     @Operation(summary = "Get movies by theater", description = "Retrieve all movies for a specific theater")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved movies",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Movie.class))),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved movies", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Movie.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public List<Movie> getMoviesByTheater(
             @Parameter(description = "Theater ID", required = true) @PathVariable Long theaterId) {
@@ -66,10 +63,9 @@ public class MovieController {
     @PostMapping
     @Operation(summary = "Create new movie", description = "Add a new movie to the system")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Movie created successfully",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Movie.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid input data"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "200", description = "Movie created successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Movie.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public Movie createMovie(
             @Parameter(description = "Movie object", required = true) @RequestBody Movie movie) {
@@ -79,11 +75,10 @@ public class MovieController {
     @PutMapping("/{id}")
     @Operation(summary = "Update movie", description = "Update an existing movie's information")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Movie updated successfully",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Movie.class))),
-        @ApiResponse(responseCode = "404", description = "Movie not found"),
-        @ApiResponse(responseCode = "400", description = "Invalid input data"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "200", description = "Movie updated successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Movie.class))),
+            @ApiResponse(responseCode = "404", description = "Movie not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<Movie> updateMovie(
             @Parameter(description = "Movie ID", required = true) @PathVariable Long id,
@@ -96,6 +91,10 @@ public class MovieController {
             updatedMovie.setGenre(movieDetails.getGenre());
             updatedMovie.setDirector(movieDetails.getDirector());
             updatedMovie.setDuration(movieDetails.getDuration());
+            updatedMovie.setReleaseDate(movieDetails.getReleaseDate());
+            updatedMovie.setPosterUrl(movieDetails.getPosterUrl());
+            updatedMovie.setActive(movieDetails.isActive());
+            updatedMovie.setTheater(movieDetails.getTheater());
             return ResponseEntity.ok(movieRepository.save(updatedMovie));
         } else {
             return ResponseEntity.notFound().build();
@@ -105,9 +104,9 @@ public class MovieController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete movie", description = "Delete a movie from the system")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "204", description = "Movie deleted successfully"),
-        @ApiResponse(responseCode = "404", description = "Movie not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "204", description = "Movie deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Movie not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<Void> deleteMovie(
             @Parameter(description = "Movie ID", required = true) @PathVariable Long id) {
