@@ -89,6 +89,32 @@ const SuperAdminDashboard: React.FC = () => {
           </Link>
 
           <Link
+            to="/super-admin/analytics"
+            className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors duration-200"
+          >
+            <div className="p-2 rounded-lg bg-purple-100 mr-3">
+              <span className="text-xl">📊</span>
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Go to Analytics</h3>
+              <p className="text-sm text-gray-600">View real-time KPIs and trends</p>
+            </div>
+          </Link>
+
+          <Link
+            to="/super-admin/rag-chat"
+            className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors duration-200"
+          >
+            <div className="p-2 rounded-lg bg-indigo-100 mr-3">
+              <span className="text-xl">💬</span>
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">RAG Chat</h3>
+              <p className="text-sm text-gray-600">Chat over indexed PDF reports</p>
+            </div>
+          </Link>
+
+          <Link
             to="/admin"
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors duration-200"
           >

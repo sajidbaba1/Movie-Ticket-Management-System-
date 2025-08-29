@@ -22,6 +22,8 @@ const SuperAdminHeader: React.FC = () => {
     { path: '/super-admin', label: 'Dashboard', icon: '🏠' },
     { path: '/super-admin/admins', label: 'Admin Management', icon: '👥' },
     { path: '/admin', label: 'System View', icon: '🎬' },
+    { path: '/super-admin/analytics', label: 'Analytics', icon: '📊' },
+    { path: '/super-admin/rag-chat', label: 'RAG Chat', icon: '💬' },
   ];
 
   return (

@@ -56,6 +56,7 @@ import SuperAdminTheatersPage from './pages/super-admin/SuperAdminTheatersPage';
 import SuperAdminUsersPage from './pages/super-admin/SuperAdminUsersPage';
 import SuperAdminMoviesPage from './pages/super-admin/SuperAdminMoviesPage';
 import SuperAdminAnalyticsPage from './pages/super-admin/SuperAdminAnalyticsPage';
+import SuperAdminRagChatPage from './pages/super-admin/SuperAdminRagChatPage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -288,6 +289,15 @@ const AppRoutes: React.FC = () => {
           <div className="min-h-screen bg-gray-50">
             <SuperAdminHeader />
             <SuperAdminAnalyticsPage />
+          </div>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/super-admin/rag-chat" element={
+        <ProtectedRoute requiredRoles={['SUPER_ADMIN']}>
+          <div className="min-h-screen bg-gray-50">
+            <SuperAdminHeader />
+            <SuperAdminRagChatPage />
           </div>
         </ProtectedRoute>
       } />

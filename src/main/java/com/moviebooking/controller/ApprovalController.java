@@ -3,6 +3,7 @@ package com.moviebooking.controller;
 import com.moviebooking.entity.*;
 import com.moviebooking.repository.*;
 import com.moviebooking.service.AuthService;
+import com.moviebooking.service.AnalyticsEventBus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,19 +22,22 @@ public class ApprovalController {
     private final MovieRepository movieRepo;
     private final ScheduleRepository scheduleRepo;
     private final AuthService authService;
+    private final AnalyticsEventBus analyticsBus;
 
     public ApprovalController(ApprovalRequestRepository approvalRepo,
                               EventLogRepository eventRepo,
                               TheaterRepository theaterRepo,
                               MovieRepository movieRepo,
                               ScheduleRepository scheduleRepo,
-                              AuthService authService) {
+                              AuthService authService,
+                              AnalyticsEventBus analyticsBus) {
         this.approvalRepo = approvalRepo;
         this.eventRepo = eventRepo;
         this.theaterRepo = theaterRepo;
         this.movieRepo = movieRepo;
         this.scheduleRepo = scheduleRepo;
         this.authService = authService;
+        this.analyticsBus = analyticsBus;
     }
 
     @PostMapping("/{type}/{id}/approve")
@@ -59,6 +63,12 @@ public class ApprovalController {
                 theaterRepo.save(t);
                 closeApproval(ApprovalRequest.EntityType.THEATER, id, reviewer, true, notes);
                 log(EventLog.EntityType.THEATER, id, reviewer, "APPROVE", from, t.getStatus(), notes);
+                analyticsBus.broadcast("APPROVE", Map.of(
+                        "type", "THEATER",
+                        "id", id,
+                        "reviewer", reviewer.getId(),
+                        "at", LocalDateTime.now().toString()
+                ));
                 return ResponseEntity.ok(t);
             }
             case "MOVIE" -> {
@@ -73,6 +83,12 @@ public class ApprovalController {
                 movieRepo.save(m);
                 closeApproval(ApprovalRequest.EntityType.MOVIE, id, reviewer, true, notes);
                 log(EventLog.EntityType.MOVIE, id, reviewer, "APPROVE", from, m.getStatus(), notes);
+                analyticsBus.broadcast("APPROVE", Map.of(
+                        "type", "MOVIE",
+                        "id", id,
+                        "reviewer", reviewer.getId(),
+                        "at", LocalDateTime.now().toString()
+                ));
                 return ResponseEntity.ok(m);
             }
             case "SHOW", "SCHEDULE" -> {
@@ -87,6 +103,12 @@ public class ApprovalController {
                 scheduleRepo.save(s);
                 closeApproval(ApprovalRequest.EntityType.SHOW, id, reviewer, true, notes);
                 log(EventLog.EntityType.SHOW, id, reviewer, "APPROVE", from, s.getStatus(), notes);
+                analyticsBus.broadcast("APPROVE", Map.of(
+                        "type", "SCHEDULE",
+                        "id", id,
+                        "reviewer", reviewer.getId(),
+                        "at", LocalDateTime.now().toString()
+                ));
                 return ResponseEntity.ok(s);
             }
             default -> {
@@ -115,6 +137,12 @@ public class ApprovalController {
                 theaterRepo.save(t);
                 closeApproval(ApprovalRequest.EntityType.THEATER, id, reviewer, false, notes);
                 log(EventLog.EntityType.THEATER, id, reviewer, "REJECT", from, t.getStatus(), notes);
+                analyticsBus.broadcast("REJECT", Map.of(
+                        "type", "THEATER",
+                        "id", id,
+                        "reviewer", reviewer.getId(),
+                        "at", LocalDateTime.now().toString()
+                ));
                 return ResponseEntity.ok(t);
             }
             case "MOVIE" -> {
@@ -127,6 +155,12 @@ public class ApprovalController {
                 movieRepo.save(m);
                 closeApproval(ApprovalRequest.EntityType.MOVIE, id, reviewer, false, notes);
                 log(EventLog.EntityType.MOVIE, id, reviewer, "REJECT", from, m.getStatus(), notes);
+                analyticsBus.broadcast("REJECT", Map.of(
+                        "type", "MOVIE",
+                        "id", id,
+                        "reviewer", reviewer.getId(),
+                        "at", LocalDateTime.now().toString()
+                ));
                 return ResponseEntity.ok(m);
             }
             case "SHOW", "SCHEDULE" -> {
@@ -139,6 +173,12 @@ public class ApprovalController {
                 scheduleRepo.save(s);
                 closeApproval(ApprovalRequest.EntityType.SHOW, id, reviewer, false, notes);
                 log(EventLog.EntityType.SHOW, id, reviewer, "REJECT", from, s.getStatus(), notes);
+                analyticsBus.broadcast("REJECT", Map.of(
+                        "type", "SCHEDULE",
+                        "id", id,
+                        "reviewer", reviewer.getId(),
+                        "at", LocalDateTime.now().toString()
+                ));
                 return ResponseEntity.ok(s);
             }
             default -> {

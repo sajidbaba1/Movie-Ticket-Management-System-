@@ -32,4 +32,17 @@ export const analyticsService = {
   customer(params: { userId: number; from?: string; to?: string }) {
     return apiClient.get<AnalyticsResponse>('/analytics/customer', { params }).then((r: { data: AnalyticsResponse }) => r.data);
   },
+  stream(): EventSource {
+    const token = localStorage.getItem('token');
+    // Note: EventSource does not allow setting headers; if auth is required, use a token query param or fallback to no auth
+    const url = new URL(apiClient.defaults.baseURL + '/analytics/stream');
+    if (token) url.searchParams.set('token', token);
+    return new EventSource(url.toString());
+  },
+  downloadDailyPdf(date?: string) {
+    return apiClient.post('/analytics/report/daily', null, {
+      params: date ? { date } : {},
+      responseType: 'blob',
+    }).then(res => res.data as Blob);
+  }
 };
