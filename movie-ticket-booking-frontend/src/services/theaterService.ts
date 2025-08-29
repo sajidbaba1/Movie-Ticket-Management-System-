@@ -3,8 +3,20 @@ import type { Theater, CreateTheaterRequest } from '../types';
 
 export const theaterService = {
   // Get theaters owned by current user
-  async getMyTheaters(): Promise<Theater[]> {
-    const response = await apiClient.get('/theaters/my-theaters');
+  async getMyTheaters(ownerId: number): Promise<Theater[]> {
+    const response = await apiClient.get('/theaters', { params: { ownerId } });
+    return response.data;
+  },
+
+  // Get all theaters (admin or public list)
+  async getAllTheaters(): Promise<Theater[]> {
+    const response = await apiClient.get('/theaters');
+    return response.data;
+  },
+
+  // Get theaters by city (approved & active enforced by backend when city provided)
+  async getTheatersByCity(city: string): Promise<Theater[]> {
+    const response = await apiClient.get('/theaters', { params: { city } });
     return response.data;
   },
 
@@ -16,7 +28,8 @@ export const theaterService = {
 
   // Create a new theater
   async createTheater(theaterData: CreateTheaterRequest): Promise<Theater> {
-    const response = await apiClient.post('/theaters', theaterData);
+    const payload = { ...theaterData, active: true } as any;
+    const response = await apiClient.post('/theaters', payload);
     return response.data;
   },
 

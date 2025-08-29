@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   useMySchedules,
   useCreateSchedule,
@@ -23,9 +24,10 @@ const TheaterOwnerSchedulesPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<'date' | 'movie' | 'theater'>('date');
 
   // Hooks
+  const { user } = useAuth();
   const { data: schedules = [], isLoading, error } = useMySchedules();
   // const { data: movies = [] } = useMovies();
-  const { data: theaters = [] } = useMyTheaters();
+  const { data: theaters = [] } = useMyTheaters(user?.id);
 
   const createScheduleMutation = useCreateSchedule();
   const updateScheduleMutation = useUpdateSchedule();

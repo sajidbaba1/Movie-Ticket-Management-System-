@@ -19,7 +19,8 @@ const TheaterOwnerTheatersPage: React.FC = () => {
   const [editingTheater, setEditingTheater] = useState<Theater | null>(null);
   const [deletingTheater, setDeletingTheater] = useState<Theater | null>(null);
 
-  const { data: theaters = [], isLoading, error } = useMyTheaters();
+  const { data: theaters = [], isLoading, error } = useMyTheaters(user?.id);
+
   const createTheaterMutation = useCreateTheater();
   const updateTheaterMutation = useUpdateTheater();
   const deleteTheaterMutation = useDeleteTheater();

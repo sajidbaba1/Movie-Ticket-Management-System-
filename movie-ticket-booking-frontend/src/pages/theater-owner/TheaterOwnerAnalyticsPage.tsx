@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import { useMyTheaters } from '../../hooks/useTheaterOwner';
 import { useMySchedules } from '../../hooks/useSchedules';
 import { useMovies } from '../../hooks/useMovies';
@@ -9,7 +10,9 @@ const TheaterOwnerAnalyticsPage: React.FC = () => {
   const [timeRange, setTimeRange] = useState('30');
   const [selectedTheater, setSelectedTheater] = useState('');
 
-  const { data: theaters = [], isLoading: theatersLoading } = useMyTheaters();
+  const { user } = useAuth();
+  const { data: theaters = [], isLoading: theatersLoading } = useMyTheaters(user?.id);
+
   const { data: schedules = [], isLoading: schedulesLoading } = useMySchedules();
   const { data: movies = [], isLoading: moviesLoading } = useMovies();
 

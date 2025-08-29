@@ -1,13 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { theaterService } from '../services/theaterService';
-import type { Theater, CreateTheaterRequest } from '../types';
+import type { CreateTheaterRequest } from '../types';
 import toast from 'react-hot-toast';
 
 // Get theaters for current theater owner
-export const useMyTheaters = () => {
+export const useMyTheaters = (ownerId?: number) => {
   return useQuery({
-    queryKey: ['my-theaters'],
-    queryFn: theaterService.getMyTheaters,
+    queryKey: ['my-theaters', ownerId],
+    queryFn: () => theaterService.getMyTheaters(ownerId as number),
+    enabled: typeof ownerId === 'number' && ownerId > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

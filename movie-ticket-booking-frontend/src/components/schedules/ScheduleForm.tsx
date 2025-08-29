@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import { useForm } from 'react-hook-form';
 import { useMyTheaters } from '../../hooks/useTheaterOwner';
 import { useMovies } from '../../hooks/useMovies';
@@ -18,7 +19,8 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
   onCancel,
   isLoading = false
 }) => {
-  const { data: theaters = [] } = useMyTheaters();
+  const { user } = useAuth();
+  const { data: theaters = [] } = useMyTheaters(user?.id);
   const { data: movies = [] } = useMovies();
 
   const {
