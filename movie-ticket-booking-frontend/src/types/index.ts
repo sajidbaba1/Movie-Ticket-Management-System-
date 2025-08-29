@@ -26,7 +26,7 @@ export interface Theater {
   active: boolean;
   approved: boolean;
   createdAt: string; // ISO date string
-  owner: User;
+  owner?: User;
 }
 
 export interface User {
@@ -102,7 +102,7 @@ export interface CreateTheaterRequest {
   email?: string;
   totalScreens: number;
   description?: string;
-  owner: {
+  owner?: {
     id: number;
   };
 }
