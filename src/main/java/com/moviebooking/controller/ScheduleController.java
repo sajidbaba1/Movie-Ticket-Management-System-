@@ -216,4 +216,43 @@ public class ScheduleController {
       return ResponseEntity.notFound().build();
     }
   }
+
+  // Lightweight DTO to avoid serializing lazy proxies for movie/theater
+  public static class ScheduleResponse {
+    public Long id;
+    public Long movieId;
+    public String movieTitle;
+    public Long theaterId;
+    public String theaterName;
+    public LocalDateTime showTime;
+    public java.math.BigDecimal price;
+    public Integer availableSeats;
+    public Integer totalSeats;
+    public boolean active;
+    public LocalDateTime createdAt;
+    public String screenNumber;
+    public String additionalInfo;
+
+    public static ScheduleResponse from(Schedule s) {
+      ScheduleResponse r = new ScheduleResponse();
+      r.id = s.getId();
+      if (s.getMovie() != null) {
+        r.movieId = s.getMovie().getId();
+        try { r.movieTitle = s.getMovie().getTitle(); } catch (Exception ignored) {}
+      }
+      if (s.getTheater() != null) {
+        r.theaterId = s.getTheater().getId();
+        try { r.theaterName = s.getTheater().getName(); } catch (Exception ignored) {}
+      }
+      r.showTime = s.getShowTime();
+      r.price = s.getPrice();
+      r.availableSeats = s.getAvailableSeats();
+      r.totalSeats = s.getTotalSeats();
+      r.active = s.isActive();
+      r.createdAt = s.getCreatedAt();
+      r.screenNumber = s.getScreenNumber();
+      r.additionalInfo = s.getAdditionalInfo();
+      return r;
+    }
+  }
 }
