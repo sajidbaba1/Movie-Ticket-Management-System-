@@ -2,7 +2,11 @@ package com.moviebooking.controller;
 
 import com.moviebooking.entity.Schedule;
 import com.moviebooking.entity.User;
+import com.moviebooking.entity.ApprovalRequest;
+import com.moviebooking.entity.EventLog;
 import com.moviebooking.repository.ScheduleRepository;
+import com.moviebooking.repository.ApprovalRequestRepository;
+import com.moviebooking.repository.EventLogRepository;
 import com.moviebooking.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -33,6 +37,12 @@ public class ScheduleController {
 
   @Autowired
   private AuthService authService;
+
+  @Autowired
+  private ApprovalRequestRepository approvalRequestRepository;
+
+  @Autowired
+  private EventLogRepository eventLogRepository;
 
   @GetMapping
   @Operation(summary = "Get all schedules", description = "Retrieve a list of all active schedules")
@@ -219,6 +229,104 @@ public class ScheduleController {
     } else {
       return ResponseEntity.notFound().build();
     }
+  }
+
+  // Owner: submit schedule for approval
+  @PostMapping("/{id}/submit-for-approval")
+  public ResponseEntity<?> submitForApproval(@PathVariable Long id,
+                                             @RequestHeader(value = "Authorization", required = false) String authorization) {
+    try {
+      if (authorization == null || !authorization.startsWith("Bearer ")) {
+        return ResponseEntity.status(401).body(java.util.Map.of("message", "Unauthorized"));
+      }
+      User user = authService.validateToken(authorization.substring(7));
+      if (user == null) return ResponseEntity.status(401).body(java.util.Map.of("message", "Unauthorized"));
+      Optional<Schedule> opt = scheduleRepository.findById(id);
+      if (opt.isEmpty()) return ResponseEntity.status(404).body(java.util.Map.of("message", "Schedule not found"));
+      Schedule s = opt.get();
+      Schedule.Status from = s.getStatus();
+      s.setStatus(Schedule.Status.DRAFT); // ensure draft before submit
+      s.setStatus(Schedule.Status.APPROVED == s.getStatus() ? s.getStatus() : Schedule.Status.DRAFT);
+      s.setStatus(Schedule.Status.DRAFT); // normalize
+      scheduleRepository.save(s);
+
+      ApprovalRequest ar = new ApprovalRequest();
+      ar.setEntityType(ApprovalRequest.EntityType.SHOW);
+      ar.setEntityId(s.getId());
+      ar.setRequestedBy(user);
+      approvalRequestRepository.save(ar);
+
+      EventLog ev = new EventLog();
+      ev.setEntityType(EventLog.EntityType.SHOW);
+      ev.setEntityId(s.getId());
+      ev.setUser(user);
+      ev.setEventType("SUBMIT");
+      ev.setFromStatus(from != null ? from.name() : null);
+      ev.setToStatus(s.getStatus().name());
+      eventLogRepository.save(ev);
+
+      return ResponseEntity.ok(s);
+    } catch (Exception e) {
+      return ResponseEntity.status(500).build();
+    }
+  }
+
+  // Admin: put a schedule on sale (requires approved)
+  @PatchMapping("/{id}/on-sale")
+  public ResponseEntity<?> setOnSale(@PathVariable Long id,
+                                     @RequestHeader(value = "Authorization", required = false) String authorization) {
+    try {
+      Optional<Schedule> opt = scheduleRepository.findById(id);
+      if (opt.isEmpty()) return ResponseEntity.status(404).body(java.util.Map.of("message", "Schedule not found"));
+      Schedule s = opt.get();
+      if (s.getStatus() != Schedule.Status.APPROVED) {
+        return ResponseEntity.badRequest().body(java.util.Map.of("message", "Schedule must be approved before going on sale"));
+      }
+      Schedule.Status from = s.getStatus();
+      s.setStatus(Schedule.Status.ON_SALE);
+      scheduleRepository.save(s);
+      EventLog ev = new EventLog();
+      ev.setEntityType(EventLog.EntityType.SHOW);
+      ev.setEntityId(s.getId());
+      ev.setUser(getUser(authorization));
+      ev.setEventType("ON_SALE");
+      ev.setFromStatus(from.name());
+      ev.setToStatus(s.getStatus().name());
+      eventLogRepository.save(ev);
+      return ResponseEntity.ok(s);
+    } catch (Exception e) {
+      return ResponseEntity.status(500).build();
+    }
+  }
+
+  // Admin: cancel a schedule
+  @PatchMapping("/{id}/cancel")
+  public ResponseEntity<?> cancel(@PathVariable Long id,
+                                  @RequestHeader(value = "Authorization", required = false) String authorization) {
+    try {
+      Optional<Schedule> opt = scheduleRepository.findById(id);
+      if (opt.isEmpty()) return ResponseEntity.status(404).body(java.util.Map.of("message", "Schedule not found"));
+      Schedule s = opt.get();
+      Schedule.Status from = s.getStatus();
+      s.setStatus(Schedule.Status.CANCELLED);
+      scheduleRepository.save(s);
+      EventLog ev = new EventLog();
+      ev.setEntityType(EventLog.EntityType.SHOW);
+      ev.setEntityId(s.getId());
+      ev.setUser(getUser(authorization));
+      ev.setEventType("CANCEL");
+      ev.setFromStatus(from != null ? from.name() : null);
+      ev.setToStatus(s.getStatus().name());
+      eventLogRepository.save(ev);
+      return ResponseEntity.ok(s);
+    } catch (Exception e) {
+      return ResponseEntity.status(500).build();
+    }
+  }
+
+  private User getUser(String authorization) {
+    if (authorization == null || !authorization.startsWith("Bearer ")) return null;
+    return authService.validateToken(authorization.substring(7));
   }
 
   // Lightweight DTO to avoid serializing lazy proxies for movie/theater

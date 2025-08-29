@@ -1,8 +1,15 @@
 package com.moviebooking.controller;
 
 import com.moviebooking.entity.Theater;
+import com.moviebooking.entity.ApprovalRequest;
+import com.moviebooking.entity.EventLog;
+import com.moviebooking.entity.User;
 import com.moviebooking.repository.TheaterRepository;
+import com.moviebooking.repository.ApprovalRequestRepository;
+import com.moviebooking.repository.EventLogRepository;
+import com.moviebooking.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +24,15 @@ public class TheaterController {
 
     @Autowired
     private TheaterRepository theaterRepository;
+
+    @Autowired
+    private AuthService authService;
+
+    @Autowired
+    private ApprovalRequestRepository approvalRequestRepository;
+
+    @Autowired
+    private EventLogRepository eventLogRepository;
 
     // List theaters
     @GetMapping
@@ -58,8 +74,27 @@ public class TheaterController {
 
     // Create theater
     @PostMapping
-    public ResponseEntity<Theater> createTheater(@RequestBody Theater theater) {
+    public ResponseEntity<Theater> createTheater(
+            @RequestBody Theater theater,
+            @RequestHeader(value = "Authorization", required = false) String authorization
+    ) {
         try {
+            // Resolve owner from bearer token if not provided in request
+            if (theater.getOwner() == null) {
+                if (authorization == null || !authorization.startsWith("Bearer ")) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+                }
+                String token = authorization.substring("Bearer ".length());
+                User current = authService.validateToken(token);
+                if (current == null) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+                }
+                // Only theater owners or admins can create theaters and be set as owners
+                if (current.getRole() != User.UserRole.THEATER_OWNER && current.getRole() != User.UserRole.ADMIN) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                }
+                theater.setOwner(current);
+            }
             // Entity defaults handle booleans; ensure active true if not explicitly provided
             // (Field is primitive boolean with default true in entity)
             Theater saved = theaterRepository.save(theater);
@@ -114,6 +149,106 @@ public class TheaterController {
         }
     }
 
+    // Owner: submit theater for approval
+    @PostMapping("/{id}/submit-for-approval")
+    public ResponseEntity<?> submitForApproval(@PathVariable Long id,
+                                               @RequestHeader(value = "Authorization", required = false) String authorization) {
+        try {
+            if (authorization == null || !authorization.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(java.util.Map.of("message", "Unauthorized"));
+            }
+            User user = authService.validateToken(authorization.substring(7));
+            if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(java.util.Map.of("message", "Unauthorized"));
+
+            Optional<Theater> opt = theaterRepository.findById(id);
+            if (opt.isEmpty()) return ResponseEntity.status(404).body(java.util.Map.of("message", "Theater not found"));
+            Theater t = opt.get();
+            if (t.getOwner() == null || !t.getOwner().getId().equals(user.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", "Forbidden"));
+            }
+            Theater.Status from = t.getStatus();
+            t.setStatus(Theater.Status.SUBMITTED);
+            theaterRepository.save(t);
+
+            ApprovalRequest ar = new ApprovalRequest();
+            ar.setEntityType(ApprovalRequest.EntityType.THEATER);
+            ar.setEntityId(t.getId());
+            ar.setRequestedBy(user);
+            approvalRequestRepository.save(ar);
+
+            EventLog ev = new EventLog();
+            ev.setEntityType(EventLog.EntityType.THEATER);
+            ev.setEntityId(t.getId());
+            ev.setUser(user);
+            ev.setEventType("SUBMIT");
+            ev.setFromStatus(from != null ? from.name() : null);
+            ev.setToStatus(t.getStatus().name());
+            eventLogRepository.save(ev);
+
+            return ResponseEntity.ok(t);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    // Admin: activate theater
+    @PatchMapping("/{id}/activate")
+    public ResponseEntity<?> activate(@PathVariable Long id,
+                                      @RequestHeader(value = "Authorization", required = false) String authorization) {
+        try {
+            Optional<Theater> opt = theaterRepository.findById(id);
+            if (opt.isEmpty()) return ResponseEntity.status(404).body(java.util.Map.of("message", "Theater not found"));
+            Theater t = opt.get();
+            Theater.Status from = t.getStatus();
+            t.setActive(true);
+            t.setStatus(Theater.Status.ACTIVE);
+            theaterRepository.save(t);
+
+            EventLog ev = new EventLog();
+            ev.setEntityType(EventLog.EntityType.THEATER);
+            ev.setEntityId(t.getId());
+            ev.setUser(getUser(authorization));
+            ev.setEventType("ACTIVATE");
+            ev.setFromStatus(from != null ? from.name() : null);
+            ev.setToStatus(t.getStatus().name());
+            eventLogRepository.save(ev);
+            return ResponseEntity.ok(t);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    // Admin: deactivate theater
+    @PatchMapping("/{id}/deactivate")
+    public ResponseEntity<?> deactivate(@PathVariable Long id,
+                                        @RequestHeader(value = "Authorization", required = false) String authorization) {
+        try {
+            Optional<Theater> opt = theaterRepository.findById(id);
+            if (opt.isEmpty()) return ResponseEntity.status(404).body(java.util.Map.of("message", "Theater not found"));
+            Theater t = opt.get();
+            Theater.Status from = t.getStatus();
+            t.setActive(false);
+            t.setStatus(Theater.Status.INACTIVE);
+            theaterRepository.save(t);
+
+            EventLog ev = new EventLog();
+            ev.setEntityType(EventLog.EntityType.THEATER);
+            ev.setEntityId(t.getId());
+            ev.setUser(getUser(authorization));
+            ev.setEventType("DEACTIVATE");
+            ev.setFromStatus(from != null ? from.name() : null);
+            ev.setToStatus(t.getStatus().name());
+            eventLogRepository.save(ev);
+            return ResponseEntity.ok(t);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    private User getUser(String authorization) {
+        if (authorization == null || !authorization.startsWith("Bearer ")) return null;
+        return authService.validateToken(authorization.substring(7));
+    }
     // Toggle active status (to match frontend theaterService.toggleTheaterStatus)
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
@@ -148,7 +283,7 @@ public class TheaterController {
     // Toggle approval status (admin action)
     @PatchMapping("/{id}/approval")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Theater> updateTheaterApproval(@PathVariable Long id, @RequestBody ApprovalRequest approvalRequest) {
+    public ResponseEntity<Theater> updateTheaterApproval(@PathVariable Long id, @RequestBody ApprovalToggleRequest approvalRequest) {
         try {
             Optional<Theater> existingOpt = theaterRepository.findById(id);
             if (existingOpt.isEmpty()) {
@@ -164,7 +299,7 @@ public class TheaterController {
     }
 
     // DTO for approval updates
-    public static class ApprovalRequest {
+    public static class ApprovalToggleRequest {
         private boolean approved;
 
         public boolean isApproved() {

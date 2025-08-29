@@ -76,13 +76,37 @@ public class BookingController {
             return ResponseEntity.status(404).body(Map.of("message", "Schedule not found"));
         }
         Schedule schedule = scheduleOpt.get();
-        if (!schedule.isActive()) {
+        // New governance checks (status enums) with backward-compatible fallbacks
+        if (schedule.getStatus() != null) {
+            if (schedule.getStatus() != Schedule.Status.ON_SALE) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Show is not on sale"));
+            }
+        } else if (!schedule.isActive()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Schedule inactive"));
         }
-        // Ensure theater is approved and active before allowing booking
+        // Ensure theater and movie meet approval requirements
         Theater schedTheater = schedule.getTheater();
-        if (schedTheater == null || !schedTheater.isApproved() || !schedTheater.isActive()) {
+        if (schedTheater == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Theater missing for this show"));
+        }
+        if (schedTheater.getStatus() != null) {
+            if (!(schedTheater.getStatus() == com.moviebooking.entity.Theater.Status.APPROVED ||
+                  schedTheater.getStatus() == com.moviebooking.entity.Theater.Status.ACTIVE)) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Theater not approved/active"));
+            }
+        } else if (!schedTheater.isApproved() || !schedTheater.isActive()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Theater is not approved/active for bookings"));
+        }
+        if (schedule.getMovie() != null) {
+            com.moviebooking.entity.Movie mv = schedule.getMovie();
+            if (mv.getStatus() != null) {
+                if (!(mv.getStatus() == com.moviebooking.entity.Movie.Status.APPROVED ||
+                      mv.getStatus() == com.moviebooking.entity.Movie.Status.PUBLISHED)) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "Movie not approved/published"));
+                }
+            } else if (!mv.isActive()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Movie inactive"));
+            }
         }
         if (schedule.getAvailableSeats() < seatsCount) {
             return ResponseEntity.badRequest().body(Map.of("message", "Not enough seats available"));

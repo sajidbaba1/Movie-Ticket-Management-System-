@@ -49,4 +49,22 @@ public class Movie {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "theater_id")
     private Theater theater;
+
+    // Governance: status lifecycle for movies
+    public enum Status { DRAFT, APPROVED, PUBLISHED, UNPUBLISHED, RETIRED }
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Status status = Status.DRAFT;
+
+    // Approval metadata
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "approved_by_id")
+    private User approvedBy;
+
+    @Column
+    private LocalDateTime approvedAt;
+
+    @Column(length = 1000)
+    private String approvalNotes;
 }

@@ -50,4 +50,22 @@ public class Schedule {
 
   @Column
   private String additionalInfo;
+
+  // Governance: status lifecycle for show schedules
+  public enum Status { DRAFT, APPROVED, ON_SALE, CANCELLED, COMPLETED }
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private Status status = Status.DRAFT;
+
+  // Approval metadata
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "approved_by_id")
+  private User approvedBy;
+
+  @Column
+  private LocalDateTime approvedAt;
+
+  @Column(length = 1000)
+  private String approvalNotes;
 }

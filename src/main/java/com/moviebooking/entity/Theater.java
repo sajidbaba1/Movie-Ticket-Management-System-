@@ -57,6 +57,25 @@ public class Theater {
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    // Governance: unified status lifecycle
+    public enum Status { DRAFT, SUBMITTED, APPROVED, ACTIVE, INACTIVE, SUSPENDED, ARCHIVED }
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Status status = Status.DRAFT;
+
+    // Approval metadata
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "approved_by_id")
+    @JsonIgnore
+    private User approvedBy;
+
+    @Column
+    private LocalDateTime approvedAt;
+
+    @Column(length = 1000)
+    private String approvalNotes;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "owner_id", nullable = true)
     @JsonIgnore
