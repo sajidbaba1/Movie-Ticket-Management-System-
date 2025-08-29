@@ -37,11 +37,14 @@ public class ScheduleController {
   @GetMapping
   @Operation(summary = "Get all schedules", description = "Retrieve a list of all active schedules")
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Successfully retrieved schedules", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Schedule.class))),
+      @ApiResponse(responseCode = "200", description = "Successfully retrieved schedules", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ScheduleResponse.class))),
       @ApiResponse(responseCode = "500", description = "Internal server error")
   })
-  public List<Schedule> getAllSchedules() {
-    return scheduleRepository.findByActiveTrue();
+  public List<ScheduleResponse> getAllSchedules() {
+    return scheduleRepository.findByActiveTrue()
+        .stream()
+        .map(ScheduleResponse::from)
+        .toList();
   }
 
   @GetMapping("/{id}")
@@ -60,22 +63,25 @@ public class ScheduleController {
   @GetMapping("/theater/{theaterId}")
   @Operation(summary = "Get schedules by theater", description = "Retrieve all schedules for a specific theater")
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Successfully retrieved schedules", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Schedule.class))),
+      @ApiResponse(responseCode = "200", description = "Successfully retrieved schedules", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ScheduleResponse.class))),
       @ApiResponse(responseCode = "500", description = "Internal server error")
   })
-  public List<Schedule> getSchedulesByTheater(
+  public List<ScheduleResponse> getSchedulesByTheater(
       @Parameter(description = "Theater ID", required = true) @PathVariable Long theaterId) {
-    return scheduleRepository.findByTheaterIdAndActiveTrue(theaterId);
+    return scheduleRepository.findByTheaterIdAndActiveTrue(theaterId)
+        .stream()
+        .map(ScheduleResponse::from)
+        .toList();
   }
 
   @GetMapping("/my-schedules")
   @Operation(summary = "Get my schedules", description = "Retrieve all schedules for theaters owned by the authenticated user")
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Successfully retrieved schedules", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Schedule.class))),
+      @ApiResponse(responseCode = "200", description = "Successfully retrieved schedules", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ScheduleResponse.class))),
       @ApiResponse(responseCode = "401", description = "Unauthorized"),
       @ApiResponse(responseCode = "500", description = "Internal server error")
   })
-  public ResponseEntity<List<Schedule>> getMySchedules(
+  public ResponseEntity<List<ScheduleResponse>> getMySchedules(
       @Parameter(description = "Authorization header with Bearer token", required = true) @RequestHeader("Authorization") String authHeader) {
     try {
       if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -86,10 +92,12 @@ public class ScheduleController {
       User user = authService.validateToken(token);
 
       if (user != null) {
-        // Get schedules for all theaters owned by this user
-        List<Schedule> schedules = scheduleRepository.findAll()
+        List<ScheduleResponse> schedules = scheduleRepository.findAll()
             .stream()
-            .filter(schedule -> schedule.getTheater().getOwner().getId().equals(user.getId()))
+            .filter(schedule -> schedule.getTheater() != null
+                && schedule.getTheater().getOwner() != null
+                && schedule.getTheater().getOwner().getId().equals(user.getId()))
+            .map(ScheduleResponse::from)
             .toList();
         return ResponseEntity.ok(schedules);
       } else {
@@ -103,24 +111,30 @@ public class ScheduleController {
   @GetMapping("/movie/{movieId}")
   @Operation(summary = "Get schedules by movie", description = "Retrieve all schedules for a specific movie")
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Successfully retrieved schedules", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Schedule.class))),
+      @ApiResponse(responseCode = "200", description = "Successfully retrieved schedules", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ScheduleResponse.class))),
       @ApiResponse(responseCode = "500", description = "Internal server error")
   })
-  public List<Schedule> getSchedulesByMovie(
+  public List<ScheduleResponse> getSchedulesByMovie(
       @Parameter(description = "Movie ID", required = true) @PathVariable Long movieId) {
-    return scheduleRepository.findByMovieIdAndActiveTrue(movieId);
+    return scheduleRepository.findByMovieIdAndActiveTrue(movieId)
+        .stream()
+        .map(ScheduleResponse::from)
+        .toList();
   }
 
   @GetMapping("/date-range")
   @Operation(summary = "Get schedules by date range", description = "Retrieve schedules within a specific date range")
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Successfully retrieved schedules", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Schedule.class))),
+      @ApiResponse(responseCode = "200", description = "Successfully retrieved schedules", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ScheduleResponse.class))),
       @ApiResponse(responseCode = "500", description = "Internal server error")
   })
-  public List<Schedule> getSchedulesByDateRange(
+  public List<ScheduleResponse> getSchedulesByDateRange(
       @Parameter(description = "Start date and time", required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
       @Parameter(description = "End date and time", required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
-    return scheduleRepository.findByShowTimeBetweenAndActiveTrue(startTime, endTime);
+    return scheduleRepository.findByShowTimeBetweenAndActiveTrue(startTime, endTime)
+        .stream()
+        .map(ScheduleResponse::from)
+        .toList();
   }
 
   @PostMapping
