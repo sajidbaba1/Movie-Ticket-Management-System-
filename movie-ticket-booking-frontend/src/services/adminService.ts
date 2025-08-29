@@ -49,6 +49,8 @@ export const adminService = {
       const response = await api.get(`${BASE_URL}/admins`);
       return response.data;
     } catch (err) {
+      // Fallback only for READ to keep UI usable; this data is NOT persisted
+      console.warn('[adminService] Backend unavailable for getAllAdmins; using non-persistent mock data');
       const list = ensureMockAdmins();
       return [...list];
     }
@@ -60,6 +62,8 @@ export const adminService = {
       const response = await api.get(`${BASE_URL}/admins/${id}`);
       return response.data;
     } catch (err) {
+      // Fallback only for READ to keep UI usable; this data is NOT persisted
+      console.warn('[adminService] Backend unavailable for getAdminById; using non-persistent mock data');
       const list = ensureMockAdmins();
       const found = list.find(a => a.id === id);
       if (!found) throw new Error('Admin not found');
@@ -67,64 +71,51 @@ export const adminService = {
     }
   },
 
-  // Create new admin user
+  // Create new admin user (NO MOCK FALLBACK - must persist to DB)
   createAdmin: async (adminData: CreateUserRequest): Promise<User> => {
     try {
       const response = await api.post(`${BASE_URL}/admins`, adminData);
       return response.data;
-    } catch (err) {
-      const list = ensureMockAdmins();
-      const newAdmin: User = {
-        id: nextMockId++,
-        firstName: adminData.firstName,
-        lastName: adminData.lastName,
-        email: adminData.email,
-        phone: adminData.phone || '',
-        role: 'ADMIN',
-        active: true,
-        createdAt: new Date().toISOString(),
-      };
-      list.push(newAdmin);
-      return { ...newAdmin };
+    } catch (err: any) {
+      // Do not fallback for writes – surface error so user knows backend must be online
+      const message = err?.response?.data?.message || 'Failed to create admin. Backend unavailable or request invalid.';
+      console.error('[adminService] createAdmin failed:', message, err);
+      throw new Error(message);
     }
   },
 
-  // Update admin user
+  // Update admin user (NO MOCK FALLBACK - must persist to DB)
   updateAdmin: async (id: number, adminData: Partial<User>): Promise<User> => {
     try {
       const response = await api.put(`${BASE_URL}/admins/${id}`, adminData);
       return response.data;
-    } catch (err) {
-      const list = ensureMockAdmins();
-      const idx = list.findIndex(a => a.id === id);
-      if (idx === -1) throw new Error('Admin not found');
-      list[idx] = { ...list[idx], ...adminData } as User;
-      return { ...list[idx] };
+    } catch (err: any) {
+      const message = err?.response?.data?.message || 'Failed to update admin. Backend unavailable or request invalid.';
+      console.error('[adminService] updateAdmin failed:', message, err);
+      throw new Error(message);
     }
   },
 
-  // Toggle admin status
+  // Toggle admin status (NO MOCK FALLBACK - must persist to DB)
   toggleAdminStatus: async (id: number, active: boolean): Promise<User> => {
     try {
       const response = await api.patch(`${BASE_URL}/admins/${id}/status`, { active });
       return response.data;
-    } catch (err) {
-      const list = ensureMockAdmins();
-      const idx = list.findIndex(a => a.id === id);
-      if (idx === -1) throw new Error('Admin not found');
-      list[idx] = { ...list[idx], active } as User;
-      return { ...list[idx] };
+    } catch (err: any) {
+      const message = err?.response?.data?.message || 'Failed to update admin status. Backend unavailable or request invalid.';
+      console.error('[adminService] toggleAdminStatus failed:', message, err);
+      throw new Error(message);
     }
   },
 
-  // Delete admin user
+  // Delete admin user (NO MOCK FALLBACK - must persist to DB)
   deleteAdmin: async (id: number): Promise<void> => {
     try {
       await api.delete(`${BASE_URL}/admins/${id}`);
-    } catch (err) {
-      const list = ensureMockAdmins();
-      const idx = list.findIndex(a => a.id === id);
-      if (idx !== -1) list.splice(idx, 1);
+    } catch (err: any) {
+      const message = err?.response?.data?.message || 'Failed to delete admin. Backend unavailable or request invalid.';
+      console.error('[adminService] deleteAdmin failed:', message, err);
+      throw new Error(message);
     }
   },
 
@@ -134,6 +125,8 @@ export const adminService = {
       const response = await api.get(`${BASE_URL}/stats`);
       return response.data;
     } catch (err) {
+      // Fallback only for READ to keep UI usable; this data is NOT persisted
+      console.warn('[adminService] Backend unavailable for getAdminStats; using non-persistent mock data');
       const list = ensureMockAdmins();
       return computeStats(list);
     }
