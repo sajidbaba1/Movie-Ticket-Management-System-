@@ -50,6 +50,12 @@ export const theaterService = {
     return response.data;
   },
 
+  // Update theater approval status (admin action)
+  async updateApprovalStatus(id: number, approved: boolean): Promise<Theater> {
+    const response = await apiClient.patch(`/theaters/${id}/approval`, { approved });
+    return response.data;
+  },
+
   // Get theater statistics
   async getTheaterStats(id: number): Promise<{
     totalBookings: number;

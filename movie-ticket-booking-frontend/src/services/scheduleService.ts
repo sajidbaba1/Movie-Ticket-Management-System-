@@ -27,9 +27,7 @@ const mapDto = (dto: ScheduleResponse): Schedule => {
     : undefined;
   return {
     id: dto.id,
-    // @ts-expect-error allow partial mapping for read views
     movie: movie as any,
-    // @ts-expect-error allow partial mapping for read views
     theater: theater as any,
     showTime: dto.showTime,
     price: Number(dto.price),

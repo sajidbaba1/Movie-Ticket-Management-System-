@@ -109,6 +109,8 @@ const Button: React.FC<ButtonProps> = ({
         className
       )}
       disabled={disabled || loading}
+      // Default to button to avoid submitting parent forms unless explicitly set
+      type={(props.type as any) || 'button'}
       {...props}
     >
       {iconPosition === 'left' && renderIcon()}

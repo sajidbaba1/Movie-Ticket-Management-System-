@@ -1,5 +1,6 @@
 import apiClient from './api';
 import type { Movie, CreateMovieRequest } from '../types';
+import { tmdb } from './tmdb';
 
 export const movieService = {
   // Get all active movies
@@ -20,9 +21,10 @@ export const movieService = {
     return response.data;
   },
 
-  // Create a new movie
+  // Create a new movie (ensure active defaults to true so it shows up)
   createMovie: async (movieData: CreateMovieRequest): Promise<Movie> => {
-    const response = await apiClient.post<Movie>('/movies', movieData);
+    const payload = { ...movieData, active: true } as any;
+    const response = await apiClient.post<Movie>('/movies', payload);
     return response.data;
   },
 
@@ -39,12 +41,14 @@ export const movieService = {
 
   // Search movies by title or genre
   searchMovies: async (query: string): Promise<Movie[]> => {
-    const allMovies = await movieService.getAllMovies();
-    return allMovies.filter(movie =>
-      movie.title.toLowerCase().includes(query.toLowerCase()) ||
-      movie.genre.toLowerCase().includes(query.toLowerCase()) ||
-      movie.director.toLowerCase().includes(query.toLowerCase())
-    );
+    const response = await apiClient.get<Movie[]>(`/movies/search`, { params: { q: query } });
+    return response.data;
+  },
+
+  // Get active movies count
+  countActive: async (): Promise<number> => {
+    const response = await apiClient.get<number>(`/movies/count`);
+    return response.data as unknown as number;
   },
 
   // Filter movies by genre
@@ -53,5 +57,44 @@ export const movieService = {
     return allMovies.filter(movie =>
       movie.genre.toLowerCase() === genre.toLowerCase()
     );
+  },
+
+  // Fetch a batch of popular movies from TMDB (utility for selection UIs)
+  getPopularFromTmdb: async (page = 1) => {
+    return tmdb.popular(page);
+  },
+
+  // Import a single TMDB movie by ID and create it in backend
+  importOneFromTmdb: async (tmdbId: number, theaterId?: number): Promise<Movie> => {
+    const details = await tmdb.details(tmdbId);
+    const posterUrl = tmdb.imageUrl(details.poster_path, 'w500');
+
+    const payload: CreateMovieRequest = {
+      title: details.title,
+      description: details.overview || '',
+      genre: (details.genres?.[0]?.name || 'Drama'),
+      director: 'N/A',
+      duration: details.runtime || 120,
+      releaseDate: details.release_date || new Date().toISOString().slice(0, 10),
+      posterUrl,
+      theater: theaterId ? { id: theaterId } : undefined,
+    };
+
+    return movieService.createMovie(payload);
+  },
+
+  // Import multiple TMDB movies by their IDs
+  importManyFromTmdb: async (tmdbIds: number[], theaterId?: number): Promise<Movie[]> => {
+    const results: Movie[] = [];
+    for (const id of tmdbIds) {
+      try {
+        const created = await movieService.importOneFromTmdb(id, theaterId);
+        results.push(created);
+      } catch (e) {
+        // Continue on error; log to console
+        console.warn('Failed importing TMDB id', id, e);
+      }
+    }
+    return results;
   }
 };

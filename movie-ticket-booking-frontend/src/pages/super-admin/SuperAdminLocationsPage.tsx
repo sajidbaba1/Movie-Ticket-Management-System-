@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button, Input, Card } from '../../components/ui';
 import { useUIStore } from '../../stores/uiStore';
-import toast from 'react-hot-toast';
 
 interface Location {
   id: string;

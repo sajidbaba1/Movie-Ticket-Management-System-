@@ -10,4 +10,6 @@ import java.util.List;
 public interface MovieRepository extends JpaRepository<Movie, Long> {
     List<Movie> findByActiveTrue();
     List<Movie> findByTheaterIdAndActiveTrue(Long theaterId);
+    List<Movie> findByTitleContainingIgnoreCaseAndActiveTrue(String title);
+    long countByActiveTrue();
 }

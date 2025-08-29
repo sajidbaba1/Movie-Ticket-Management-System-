@@ -2,7 +2,8 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '../../hooks/useUsers';
 import { Button, Card } from '../../components/ui';
-import { formatDateTime, getUserFullName } from '../../utils';
+import { formatDateTime, getUserFullName, getRoleIcon, getRoleLabel } from '../../utils';
+
 import type { UserRole } from '../../types';
 
 const UserDetailPage: React.FC = () => {
@@ -13,6 +14,8 @@ const UserDetailPage: React.FC = () => {
 
   const getRoleColor = (role: UserRole) => {
     switch (role) {
+      case 'SUPER_ADMIN':
+        return 'bg-yellow-100 text-yellow-800';
       case 'ADMIN':
         return 'bg-purple-100 text-purple-800';
       case 'THEATER_OWNER':
@@ -21,19 +24,6 @@ const UserDetailPage: React.FC = () => {
         return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getRoleIcon = (role: UserRole) => {
-    switch (role) {
-      case 'ADMIN':
-        return '👑';
-      case 'THEATER_OWNER':
-        return '🏢';
-      case 'CUSTOMER':
-        return '👤';
-      default:
-        return '❓';
     }
   };
 
@@ -102,7 +92,7 @@ const UserDetailPage: React.FC = () => {
                 </h1>
                 <div className="flex items-center gap-2 mt-2">
                   <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${getRoleColor(user.role)}`}>
-                    {getRoleIcon(user.role)} {user.role.replace('_', ' ')}
+                    {getRoleIcon(user.role)} {getRoleLabel(user.role)}
                   </span>
                   <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${user.active
                       ? 'bg-green-100 text-green-800'
@@ -165,7 +155,7 @@ const UserDetailPage: React.FC = () => {
                   <div className="space-y-2 text-gray-600">
                     <div className="flex justify-between">
                       <span>Role:</span>
-                      <span className="font-medium text-gray-900">{user.role.replace('_', ' ')}</span>
+                      <span className="font-medium text-gray-900">{getRoleLabel(user.role)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Status:</span>
@@ -195,7 +185,7 @@ const UserDetailPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <div className="text-2xl">{getRoleIcon(user.role)}</div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">{user.role.replace('_', ' ')}</h3>
+                    <h3 className="font-semibold text-gray-900">{getRoleLabel(user.role)}</h3>
                     <p className="text-gray-600">
                       {user.role === 'ADMIN' && 'Full system access and user management capabilities'}
                       {user.role === 'THEATER_OWNER' && 'Can manage theaters and their associated movies'}

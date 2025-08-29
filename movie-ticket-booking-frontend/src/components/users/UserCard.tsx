@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import type { User, UserRole } from '../../types';
-import { formatDateTime, getUserFullName } from '../../utils';
+import { formatDateTime, getUserFullName, getRoleIcon, getRoleLabel, normalizeRole } from '../../utils';
 import { Card } from '../ui';
 
 interface UserCardProps {
@@ -17,8 +17,11 @@ const UserCard: React.FC<UserCardProps> = ({
   onDelete,
   showActions = true
 }) => {
-  const getRoleColor = (role: UserRole) => {
+  const getRoleColor = (roleInput: UserRole | string) => {
+    const role = normalizeRole(roleInput as string);
     switch (role) {
+      case 'SUPER_ADMIN':
+        return 'bg-yellow-100 text-yellow-800';
       case 'ADMIN':
         return 'bg-purple-100 text-purple-800';
       case 'THEATER_OWNER':
@@ -27,19 +30,6 @@ const UserCard: React.FC<UserCardProps> = ({
         return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getRoleIcon = (role: UserRole) => {
-    switch (role) {
-      case 'ADMIN':
-        return '👑';
-      case 'THEATER_OWNER':
-        return '🏢';
-      case 'CUSTOMER':
-        return '👤';
-      default:
-        return '❓';
     }
   };
 
@@ -67,7 +57,7 @@ const UserCard: React.FC<UserCardProps> = ({
         {/* Role and Status */}
         <div className="flex items-center gap-2">
           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getRoleColor(user.role)}`}>
-            {user.role.replace('_', ' ')}
+            {getRoleLabel(user.role)}
           </span>
           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${user.active
               ? 'bg-green-100 text-green-800'

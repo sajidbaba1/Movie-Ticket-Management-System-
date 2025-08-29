@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { classNames } from '../../utils';
 import toast from 'react-hot-toast';
+import NotificationBell from '../notifications/NotificationBell';
 
 const CustomerHeader: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -113,11 +114,7 @@ const CustomerHeader: React.FC = () => {
             {/* User Menu */}
             <div className="hidden md:flex items-center space-x-4">
               {/* Notifications */}
-              <button className="relative p-2 text-gray-400 hover:text-primary-600 transition-colors duration-200 rounded-lg hover:bg-primary-50">
-                <span className="sr-only">View notifications</span>
-                <span className="text-xl">🔔</span>
-                <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-              </button>
+              <NotificationBell />
 
               {/* User Dropdown */}
               <div className="relative">

@@ -153,6 +153,13 @@ public class AuthService {
   }
 
   /**
+   * Public accessor for generating a token for an already-authenticated user
+   */
+  public String generateTokenFor(User user) {
+    return generateToken(user);
+  }
+
+  /**
    * Add password to store (for initialization purposes)
    */
   public void addPasswordToStore(String email, String password) {

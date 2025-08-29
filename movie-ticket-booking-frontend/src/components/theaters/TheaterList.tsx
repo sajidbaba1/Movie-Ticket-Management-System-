@@ -10,6 +10,10 @@ interface TheaterListProps {
   onCreateNew?: () => void;
   isLoading?: boolean;
   showActions?: boolean;
+  // Optional approve action (for admin use)
+  onApprove?: (theater: Theater) => void;
+  // Optional override for the View Details link
+  getViewLink?: (theater: Theater) => string;
 }
 
 const TheaterList: React.FC<TheaterListProps> = ({
@@ -18,7 +22,9 @@ const TheaterList: React.FC<TheaterListProps> = ({
   onDelete,
   onCreateNew,
   isLoading = false,
-  showActions = true
+  showActions = true,
+  onApprove,
+  getViewLink
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'inactive'>('all');
@@ -215,6 +221,8 @@ const TheaterList: React.FC<TheaterListProps> = ({
               theater={theater}
               onEdit={onEdit}
               onDelete={onDelete}
+              onApprove={onApprove}
+              getViewLink={getViewLink}
               showActions={showActions}
             />
           ))}

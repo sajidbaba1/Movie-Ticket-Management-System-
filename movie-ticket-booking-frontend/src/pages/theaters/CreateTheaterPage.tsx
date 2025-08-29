@@ -4,10 +4,12 @@ import { useCreateTheater } from '../../hooks/useTheaters';
 import { TheaterForm } from '../../components/theaters';
 import type { CreateTheaterRequest } from '../../types';
 import toast from 'react-hot-toast';
+// Note: do not inject owner automatically; backend owner is optional
 
 const CreateTheaterPage: React.FC = () => {
   const navigate = useNavigate();
   const createTheaterMutation = useCreateTheater();
+  
 
   const handleSubmit = async (data: CreateTheaterRequest) => {
     try {

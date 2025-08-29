@@ -36,6 +36,29 @@ public class MovieController {
         return movieRepository.findByActiveTrue();
     }
 
+    @GetMapping("/search")
+    @Operation(summary = "Search movies by title", description = "Retrieve active movies filtered by title substring (case-insensitive)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved movies", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Movie.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public List<Movie> searchMovies(@RequestParam(name = "q") String query) {
+        if (query == null || query.isBlank()) {
+            return movieRepository.findByActiveTrue();
+        }
+        return movieRepository.findByTitleContainingIgnoreCaseAndActiveTrue(query.trim());
+    }
+
+    @GetMapping("/count")
+    @Operation(summary = "Get active movies count", description = "Returns the number of active movies")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Count returned"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public Long getActiveMoviesCount() {
+        return movieRepository.countByActiveTrue();
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get movie by ID", description = "Retrieve a specific movie by its ID")
     @ApiResponses(value = {

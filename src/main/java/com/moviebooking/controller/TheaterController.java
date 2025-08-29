@@ -4,6 +4,7 @@ import com.moviebooking.entity.Theater;
 import com.moviebooking.repository.TheaterRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -115,6 +116,7 @@ public class TheaterController {
 
     // Toggle active status (to match frontend theaterService.toggleTheaterStatus)
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Theater> updateTheaterStatus(@PathVariable Long id, @RequestBody StatusRequest statusRequest) {
         try {
             Optional<Theater> existingOpt = theaterRepository.findById(id);
@@ -140,6 +142,37 @@ public class TheaterController {
 
         public void setActive(boolean active) {
             this.active = active;
+        }
+    }
+
+    // Toggle approval status (admin action)
+    @PatchMapping("/{id}/approval")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Theater> updateTheaterApproval(@PathVariable Long id, @RequestBody ApprovalRequest approvalRequest) {
+        try {
+            Optional<Theater> existingOpt = theaterRepository.findById(id);
+            if (existingOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            Theater theater = existingOpt.get();
+            theater.setApproved(approvalRequest.isApproved());
+            Theater saved = theaterRepository.save(theater);
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    // DTO for approval updates
+    public static class ApprovalRequest {
+        private boolean approved;
+
+        public boolean isApproved() {
+            return approved;
+        }
+
+        public void setApproved(boolean approved) {
+            this.approved = approved;
         }
     }
 

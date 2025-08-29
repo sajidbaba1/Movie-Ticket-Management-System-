@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { classNames } from '../../utils';
 
 interface Option {
@@ -16,7 +17,7 @@ interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>
   required?: boolean;
 }
 
-const Select: React.FC<SelectProps> = ({
+const Select = React.forwardRef<HTMLSelectElement, SelectProps>(({
   label,
   error,
   helperText,
@@ -26,7 +27,7 @@ const Select: React.FC<SelectProps> = ({
   className,
   id,
   ...props
-}) => {
+}, ref) => {
   const selectId = id || `select-${Math.random().toString(36).substr(2, 9)}`;
 
   const selectClasses = classNames(
@@ -48,6 +49,7 @@ const Select: React.FC<SelectProps> = ({
       <select
         id={selectId}
         className={selectClasses}
+        ref={ref}
         {...props}
       >
         {placeholder && (
@@ -73,6 +75,8 @@ const Select: React.FC<SelectProps> = ({
       )}
     </div>
   );
-};
+});
+
+Select.displayName = 'Select';
 
 export default Select;

@@ -12,12 +12,14 @@ const CustomerTheatersPage: React.FC = () => {
 
   // Filter theaters based on search and filters
   const filteredTheaters = (theaters as Theater[]).filter((theater: Theater) => {
-    const matchesSearch = theater.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      theater.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      theater.city.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCity = !selectedCity || theater.city === selectedCity;
+    const name = (theater.name || '').toLowerCase();
+    const address = (theater.address || '').toLowerCase();
+    const city = (theater.city || '').toLowerCase();
+    const term = (searchTerm || '').toLowerCase();
+    const matchesSearch = name.includes(term) || address.includes(term) || city.includes(term);
+    const matchesCity = !selectedCity || (theater.city || '') === selectedCity;
 
-    return theater.active && matchesSearch && matchesCity;
+    return !!theater.active && matchesSearch && matchesCity;
   });
 
   // Get unique cities

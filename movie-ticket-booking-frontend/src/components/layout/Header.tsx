@@ -80,7 +80,7 @@ const Header: React.FC = () => {
                     MovieHub
                   </span>
                   <div className="text-xs text-gray-500 font-medium hidden sm:block">
-                    Admin Dashboard
+                    🛡️ Admin Dashboard
                   </div>
                 </div>
               </Link>
@@ -124,7 +124,7 @@ const Header: React.FC = () => {
                     <div className="text-sm font-medium text-gray-900">
                       {user?.firstName} {user?.lastName}
                     </div>
-                    <div className="text-xs text-gray-500">{user?.role}</div>
+                    <div className="text-xs text-gray-500">{user?.role === 'ADMIN' ? '🛡️ ADMIN' : user?.role}</div>
                   </div>
                   <div className="h-9 w-9 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-sm">
                     <span className="text-sm font-semibold text-white">

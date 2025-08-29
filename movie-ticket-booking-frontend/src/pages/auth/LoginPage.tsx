@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button, Input, Card } from '../../components/ui';
@@ -12,10 +12,11 @@ interface LoginFormData {
 }
 
 const LoginPage: React.FC = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoading, error, clearError, isAuthenticated, user } = useAuth();
+  const { login, isLoading, error, clearError, isAuthenticated, user, sendOtp, loginWithOtp } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
 
   const {
     register,
@@ -236,6 +237,63 @@ const LoginPage: React.FC = () => {
               )}
             </Button>
           </form>
+
+          {/* Divider */}
+          <div className="flex items-center my-4">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="px-3 text-xs text-gray-400">OR</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          {/* OTP Login */}
+          <div className="space-y-3">
+            <div className="text-sm font-medium text-gray-700">Login with OTP</div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const email = (document.getElementById('email') as HTMLInputElement)?.value;
+                    if (!email) return toast.error('Enter email first');
+                    await sendOtp(email);
+                    setOtpSent(true);
+                    toast.success('OTP sent to your email');
+                  } catch (e: any) {
+                    toast.error(e?.message || 'Failed to send OTP');
+                  }
+                }}
+                className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800"
+              >
+                Send OTP
+              </button>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder={otpSent ? 'Enter 6-digit OTP' : 'OTP will appear here'}
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <button
+                type="button"
+                disabled={!otpSent || otpCode.length === 0 || isLoading}
+                onClick={async () => {
+                  try {
+                    const email = (document.getElementById('email') as HTMLInputElement)?.value;
+                    if (!email) return toast.error('Enter email first');
+                    await loginWithOtp(email, otpCode);
+                    toast.success('OTP verified!');
+                  } catch (e: any) {
+                    toast.error(e?.message || 'OTP verification failed');
+                  }
+                }}
+                className="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-60"
+              >
+                Verify OTP
+              </button>
+            </div>
+            <p className="text-xs text-gray-500">We will email a 6-digit code. It expires in 5 minutes.</p>
+          </div>
 
           {/* Sign Up Link */}
           <div className="mt-6 text-center">

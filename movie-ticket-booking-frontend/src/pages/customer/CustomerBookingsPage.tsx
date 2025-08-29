@@ -1,69 +1,37 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button, Card, Input } from '../../components/ui';
-
-interface Booking {
-  id: string;
-  movieTitle: string;
-  theaterName: string;
-  showtime: string;
-  seats: string[];
-  totalAmount: number;
-  bookingDate: string;
-  status: 'confirmed' | 'cancelled' | 'completed';
-}
+import { useMyBookings, useCancelBooking } from '../../hooks/useBookings';
 
 const CustomerBookingsPage: React.FC = () => {
   // const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-  // Mock bookings data
-  const mockBookings: Booking[] = [
-    {
-      id: 'BK001',
-      movieTitle: 'Avengers: Endgame',
-      theaterName: 'Downtown Cinema',
-      showtime: '2024-12-15 19:30',
-      seats: ['A1', 'A2'],
-      totalAmount: 28,
-      bookingDate: '2024-12-10',
-      status: 'confirmed'
-    },
-    {
-      id: 'BK002',
-      movieTitle: 'Spider-Man: No Way Home',
-      theaterName: 'Megaplex Theater',
-      showtime: '2024-12-10 21:00',
-      seats: ['B5'],
-      totalAmount: 14,
-      bookingDate: '2024-12-08',
-      status: 'completed'
-    },
-    {
-      id: 'BK003',
-      movieTitle: 'Dune',
-      theaterName: 'Central Movies',
-      showtime: '2024-12-08 18:00',
-      seats: ['C3', 'C4'],
-      totalAmount: 26,
-      bookingDate: '2024-12-05',
-      status: 'completed'
-    },
-    {
-      id: 'BK004',
-      movieTitle: 'The Batman',
-      theaterName: 'Star Cinema',
-      showtime: '2024-12-20 20:00',
-      seats: ['D1'],
-      totalAmount: 15,
-      bookingDate: '2024-12-12',
-      status: 'cancelled'
-    }
-  ];
+  const { data: myBookings = [], isLoading } = useMyBookings();
+  const cancelBooking = useCancelBooking();
 
-  const filteredBookings = mockBookings.filter((booking) => {
-    const matchesSearch = booking.movieTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.theaterName.toLowerCase().includes(searchTerm.toLowerCase());
+  const normalized = useMemo(() => {
+    return myBookings.map((b: any) => {
+      const raw = (b.status || '').toString().toLowerCase(); // created | cancelled | paid
+      const status = raw === 'created' ? 'confirmed' : raw === 'paid' ? 'completed' : raw; // map to UI set
+      return {
+        id: b.id,
+        movieTitle: b?.schedule?.movieTitle || 'Movie',
+        theaterName: b?.schedule?.theaterName || 'Theater',
+        showtime: b?.schedule?.showTime,
+        seats: [String(b.seatsCount)],
+        totalAmount: b.totalAmount,
+        bookingDate: b.createdAt,
+        status: status as 'confirmed' | 'cancelled' | 'completed',
+      };
+    });
+  }, [myBookings]);
+
+  const filteredBookings = normalized.filter((booking) => {
+    const title = (booking.movieTitle || '').toLowerCase();
+    const theater = (booking.theaterName || '').toLowerCase();
+    const q = (searchTerm || '').toLowerCase();
+    const matchesSearch = title.includes(q) || theater.includes(q);
     const matchesStatus = !statusFilter || booking.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -136,7 +104,9 @@ const CustomerBookingsPage: React.FC = () => {
         </Card>
 
         {/* Bookings List */}
-        {filteredBookings.length > 0 ? (
+        {isLoading ? (
+          <div className="text-center py-16">Loading your bookings...</div>
+        ) : filteredBookings.length > 0 ? (
           <div className="space-y-4">
             {filteredBookings.map((booking) => (
               <Card key={booking.id} padding="lg">
@@ -159,7 +129,13 @@ const CustomerBookingsPage: React.FC = () => {
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">Showtime</p>
-                        <p>{new Date(booking.showtime).toLocaleDateString()} at {new Date(booking.showtime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        <p>
+                          {booking.showtime ? (
+                            <>
+                              {new Date(booking.showtime).toLocaleDateString()} at {new Date(booking.showtime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </>
+                          ) : '—'}
+                        </p>
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">Seats</p>
@@ -172,7 +148,7 @@ const CustomerBookingsPage: React.FC = () => {
                     </div>
 
                     <div className="mt-2 text-xs text-gray-500">
-                      Booking ID: {booking.id} • Booked on {new Date(booking.bookingDate).toLocaleDateString()}
+                      Booking ID: {booking.id} • Booked on {booking.bookingDate ? new Date(booking.bookingDate).toLocaleDateString() : '—'}
                     </div>
                   </div>
 
@@ -182,8 +158,14 @@ const CustomerBookingsPage: React.FC = () => {
                         <Button variant="outline" size="sm">
                           View Ticket
                         </Button>
-                        <Button variant="outline" size="sm" className="text-red-600 border-red-300 hover:bg-red-50">
-                          Cancel
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 border-red-300 hover:bg-red-50"
+                          onClick={() => cancelBooking.mutate(booking.id as unknown as number)}
+                          disabled={cancelBooking.isPending}
+                        >
+                          {cancelBooking.isPending ? 'Cancelling...' : 'Cancel'}
                         </Button>
                       </>
                     )}
@@ -240,27 +222,27 @@ const CustomerBookingsPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <Card padding="lg" className="text-center">
               <div className="text-2xl mb-2">📊</div>
-              <div className="text-2xl font-bold text-gray-900">{mockBookings.length}</div>
+              <div className="text-2xl font-bold text-gray-900">{normalized.length}</div>
               <div className="text-sm text-gray-600">Total Bookings</div>
             </Card>
             <Card padding="lg" className="text-center">
               <div className="text-2xl mb-2">✅</div>
               <div className="text-2xl font-bold text-green-600">
-                {mockBookings.filter(b => b.status === 'confirmed').length}
+                {normalized.filter(b => b.status === 'confirmed').length}
               </div>
               <div className="text-sm text-gray-600">Confirmed</div>
             </Card>
             <Card padding="lg" className="text-center">
               <div className="text-2xl mb-2">🎬</div>
               <div className="text-2xl font-bold text-blue-600">
-                {mockBookings.filter(b => b.status === 'completed').length}
+                {normalized.filter(b => b.status === 'completed').length}
               </div>
               <div className="text-sm text-gray-600">Completed</div>
             </Card>
             <Card padding="lg" className="text-center">
               <div className="text-2xl mb-2">💰</div>
               <div className="text-2xl font-bold text-purple-600">
-                ${mockBookings.reduce((total, booking) => total + booking.totalAmount, 0)}
+                ${normalized.reduce((total, booking) => total + (Number(booking.totalAmount) || 0), 0)}
               </div>
               <div className="text-sm text-gray-600">Total Spent</div>
             </Card>

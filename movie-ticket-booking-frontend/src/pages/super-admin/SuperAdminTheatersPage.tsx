@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button, Input, Card } from '../../components/ui';
 import { useUIStore } from '../../stores/uiStore';
-import toast from 'react-hot-toast';
+import { theaterService } from '../../services/theaterService';
+import type { Theater as BackendTheater } from '../../types';
 
 interface Theater {
   id: string;
@@ -38,109 +39,48 @@ interface TheaterFormData {
 const SuperAdminTheatersPage: React.FC = () => {
   const [theaters, setTheaters] = useState<Theater[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [editingTheater, setEditingTheater] = useState<Theater | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [_editingTheater, _setEditingTheater] = useState<Theater | null>(null);
+  const [_showForm, _setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [selectedTheater, setSelectedTheater] = useState<Theater | null>(null);
   const { showNotification, showModal } = useUIStore();
 
   const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    formState: { errors, isSubmitting },
+    register: _register,
+    handleSubmit: _handleSubmit,
+    reset: _reset,
+    setValue: _setValue,
+    formState: {},
   } = useForm<TheaterFormData>();
 
-  // Mock data - replace with actual API calls
+  // Load theaters from backend and map to view model used by this page
   useEffect(() => {
     const fetchTheaters = async () => {
       try {
         setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const mockTheaters: Theater[] = [
-          {
-            id: '1',
-            name: 'PVR Cinemas - Phoenix Mall',
-            address: 'Phoenix Mall, Lower Parel, Mumbai',
-            locationId: '1',
-            locationName: 'Mumbai Central',
-            ownerName: 'Rajesh Kumar',
-            ownerEmail: 'rajesh@pvrcinemas.com',
-            phone: '+91-9876543210',
-            totalScreens: 8,
-            totalSeats: 1200,
-            status: 'PENDING',
-            amenities: ['IMAX', '4DX', 'Dolby Atmos', 'Recliner Seats', 'Food Court'],
-            description: 'Premium multiplex with latest technology and comfortable seating',
-            images: ['theater1.jpg', 'theater2.jpg'],
-            createdAt: '2024-01-20T10:00:00Z',
-            updatedAt: '2024-01-20T10:00:00Z'
-          },
-          {
-            id: '2',
-            name: 'INOX Leisure Limited',
-            address: 'Select City Walk, Saket, New Delhi',
-            locationId: '2',
-            locationName: 'Delhi NCR',
-            ownerName: 'Priya Sharma',
-            ownerEmail: 'priya@inoxmovies.com',
-            phone: '+91-9876543211',
-            totalScreens: 6,
-            totalSeats: 900,
-            status: 'APPROVED',
-            amenities: ['IMAX', 'Dolby Atmos', 'Premium Seats', 'Cafe'],
-            description: 'Modern cinema with state-of-the-art facilities',
-            images: ['theater3.jpg'],
-            createdAt: '2024-01-18T10:00:00Z',
-            updatedAt: '2024-01-19T10:00:00Z',
-            approvedAt: '2024-01-19T10:00:00Z',
-            approvedBy: 'Super Admin'
-          },
-          {
-            id: '3',
-            name: 'Cinepolis Fun Republic',
-            address: 'Fun Republic Mall, Andheri West, Mumbai',
-            locationId: '1',
-            locationName: 'Mumbai Central',
-            ownerName: 'Carlos Rodriguez',
-            ownerEmail: 'carlos@cinepolis.com',
-            phone: '+91-9876543212',
-            totalScreens: 10,
-            totalSeats: 1500,
-            status: 'APPROVED',
-            amenities: ['4DX', 'VIP Lounge', 'Gourmet Food', 'Recliner Seats'],
-            description: 'Luxury cinema experience with premium amenities',
-            images: ['theater4.jpg', 'theater5.jpg'],
-            createdAt: '2024-01-15T10:00:00Z',
-            updatedAt: '2024-01-16T10:00:00Z',
-            approvedAt: '2024-01-16T10:00:00Z',
-            approvedBy: 'Admin John'
-          },
-          {
-            id: '4',
-            name: 'Carnival Cinemas',
-            address: 'Nexus Mall, Koramangala, Bangalore',
-            locationId: '3',
-            locationName: 'Bangalore IT Hub',
-            ownerName: 'Amit Patel',
-            ownerEmail: 'amit@carnivalcinemas.com',
-            phone: '+91-9876543213',
-            totalScreens: 4,
-            totalSeats: 600,
-            status: 'REJECTED',
-            amenities: ['Standard Seats', 'Snack Bar'],
-            description: 'Budget-friendly cinema with basic facilities',
-            images: ['theater6.jpg'],
-            createdAt: '2024-01-22T10:00:00Z',
-            updatedAt: '2024-01-23T10:00:00Z',
-            rejectionReason: 'Insufficient safety measures and outdated equipment'
-          }
-        ];
-        
-        setTheaters(mockTheaters);
+        const backendList: BackendTheater[] = await theaterService.getAllTheaters();
+        const mapped: Theater[] = backendList.map((t) => ({
+          id: String(t.id),
+          name: t.name,
+          address: `${t.address}, ${t.city}, ${t.state} ${t.zipCode}`,
+          locationId: t.city,
+          locationName: t.city,
+          ownerName: t.owner ? `${t.owner.firstName} ${t.owner.lastName}` : 'Unknown',
+          ownerEmail: t.owner?.email || '-',
+          phone: t.phoneNumber || '-',
+          totalScreens: t.totalScreens,
+          totalSeats: 0,
+          status: !t.approved ? 'PENDING' : (t.active ? 'APPROVED' : 'SUSPENDED'),
+          amenities: [],
+          description: t.description || '',
+          images: [],
+          createdAt: t.createdAt,
+          updatedAt: t.createdAt,
+          approvedAt: t.approved ? t.createdAt : undefined,
+          approvedBy: t.approved ? 'Admin' : undefined,
+        }));
+        setTheaters(mapped);
       } catch (error) {
         showNotification({
           type: 'error',
@@ -151,7 +91,6 @@ const SuperAdminTheatersPage: React.FC = () => {
         setIsLoading(false);
       }
     };
-
     fetchTheaters();
   }, [showNotification]);
 
@@ -160,24 +99,16 @@ const SuperAdminTheatersPage: React.FC = () => {
       type: 'confirmation',
       title: 'Approve Theater',
       content: `Are you sure you want to approve "${theater.name}"? This will allow them to add movies and shows.`,
-      onConfirm: () => {
-        const updatedTheater = {
-          ...theater,
-          status: 'APPROVED' as const,
-          approvedAt: new Date().toISOString(),
-          approvedBy: 'Super Admin',
-          updatedAt: new Date().toISOString()
-        };
-        
-        setTheaters(prev => prev.map(t => 
-          t.id === theater.id ? updatedTheater : t
-        ));
-        
-        showNotification({
-          type: 'success',
-          title: 'Success',
-          message: `Theater "${theater.name}" has been approved`
-        });
+      onConfirm: async () => {
+        try {
+          await theaterService.updateApprovalStatus(Number(theater.id), true);
+          setTheaters(prev => prev.map(t =>
+            t.id === theater.id ? { ...t, status: 'APPROVED', approvedAt: new Date().toISOString(), approvedBy: 'Super Admin', updatedAt: new Date().toISOString() } : t
+          ));
+          showNotification({ type: 'success', title: 'Success', message: `Theater "${theater.name}" has been approved` });
+        } catch (e) {
+          showNotification({ type: 'error', title: 'Error', message: 'Failed to approve theater' });
+        }
       }
     });
   };
@@ -185,22 +116,19 @@ const SuperAdminTheatersPage: React.FC = () => {
   const handleReject = (theater: Theater) => {
     const reason = prompt('Please provide a reason for rejection:');
     if (reason) {
-      const updatedTheater = {
-        ...theater,
-        status: 'REJECTED' as const,
-        rejectionReason: reason,
-        updatedAt: new Date().toISOString()
-      };
-      
-      setTheaters(prev => prev.map(t => 
-        t.id === theater.id ? updatedTheater : t
-      ));
-      
-      showNotification({
-        type: 'success',
-        title: 'Success',
-        message: `Theater "${theater.name}" has been rejected`
-      });
+      (async () => {
+        try {
+          // Represent rejection by ensuring not approved and inactive
+          await theaterService.updateApprovalStatus(Number(theater.id), false);
+          await theaterService.toggleTheaterStatus(Number(theater.id), false);
+          setTheaters(prev => prev.map(t =>
+            t.id === theater.id ? { ...t, status: 'REJECTED', rejectionReason: reason, updatedAt: new Date().toISOString() } : t
+          ));
+          showNotification({ type: 'success', title: 'Success', message: `Theater "${theater.name}" has been rejected` });
+        } catch (e) {
+          showNotification({ type: 'error', title: 'Error', message: 'Failed to reject theater' });
+        }
+      })();
     }
   };
 
@@ -209,22 +137,16 @@ const SuperAdminTheatersPage: React.FC = () => {
       type: 'confirmation',
       title: 'Suspend Theater',
       content: `Are you sure you want to suspend "${theater.name}"? This will prevent them from adding new shows.`,
-      onConfirm: () => {
-        const updatedTheater = {
-          ...theater,
-          status: 'SUSPENDED' as const,
-          updatedAt: new Date().toISOString()
-        };
-        
-        setTheaters(prev => prev.map(t => 
-          t.id === theater.id ? updatedTheater : t
-        ));
-        
-        showNotification({
-          type: 'success',
-          title: 'Success',
-          message: `Theater "${theater.name}" has been suspended`
-        });
+      onConfirm: async () => {
+        try {
+          await theaterService.toggleTheaterStatus(Number(theater.id), false);
+          setTheaters(prev => prev.map(t =>
+            t.id === theater.id ? { ...t, status: 'SUSPENDED', updatedAt: new Date().toISOString() } : t
+          ));
+          showNotification({ type: 'success', title: 'Success', message: `Theater "${theater.name}" has been suspended` });
+        } catch (e) {
+          showNotification({ type: 'error', title: 'Error', message: 'Failed to suspend theater' });
+        }
       }
     });
   };
@@ -294,12 +216,20 @@ const SuperAdminTheatersPage: React.FC = () => {
         </div>
         <div className="flex gap-3">
           <Button
-            onClick={() => setShowForm(true)}
+            onClick={() => _setShowForm(true)}
             variant="outline"
             className="flex items-center gap-2"
           >
             <span>➕</span>
             Add Theater
+          </Button>
+          <Button
+            onClick={() => { setSearchTerm(''); setStatusFilter(''); }}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <span>👁️</span>
+            View All
           </Button>
         </div>
       </div>
@@ -330,6 +260,25 @@ const SuperAdminTheatersPage: React.FC = () => {
         </Card>
       </div>
 
+      {/* Quick Filters */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {[
+          { label: 'All', value: '' },
+          { label: 'Pending', value: 'PENDING' },
+          { label: 'Approved', value: 'APPROVED' },
+          { label: 'Rejected', value: 'REJECTED' },
+          { label: 'Suspended', value: 'SUSPENDED' },
+        ].map(tab => (
+          <button
+            key={tab.value}
+            onClick={() => setStatusFilter(tab.value)}
+            className={`px-3 py-1 rounded-full text-sm border ${statusFilter === tab.value ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300'}`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Search and Filters */}
       <Card padding="md" className="mb-6">
         <div className="flex flex-col md:flex-row gap-4">
@@ -353,6 +302,9 @@ const SuperAdminTheatersPage: React.FC = () => {
               <option value="REJECTED">Rejected</option>
               <option value="SUSPENDED">Suspended</option>
             </select>
+            <Button variant="outline" onClick={() => { setSearchTerm(''); setStatusFilter(''); }}>
+              Clear
+            </Button>
           </div>
         </div>
       </Card>

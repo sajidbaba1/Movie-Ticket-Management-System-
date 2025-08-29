@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import ChatWidget from './components/chat/ChatWidget';
 import { Layout, CustomerHeader, TheaterOwnerHeader, SuperAdminHeader } from './components/layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { ROUTES } from './constants';
@@ -44,6 +45,8 @@ import CustomerProfilePage from './pages/customer/CustomerProfilePage';
 import CustomerBookingsPage from './pages/customer/CustomerBookingsPage';
 import CustomerSettingsPage from './pages/customer/CustomerSettingsPage';
 import CustomerAnalyticsPage from './pages/customer/CustomerAnalyticsPage';
+import CustomerMovieDetailPage from './pages/customer/CustomerMovieDetailPage';
+import CustomerBookMoviePage from './pages/customer/CustomerBookMoviePage';
 
 // Super Admin Pages
 import SuperAdminDashboard from './pages/super-admin/SuperAdminDashboard';
@@ -52,6 +55,7 @@ import SuperAdminLocationsPage from './pages/super-admin/SuperAdminLocationsPage
 import SuperAdminTheatersPage from './pages/super-admin/SuperAdminTheatersPage';
 import SuperAdminUsersPage from './pages/super-admin/SuperAdminUsersPage';
 import SuperAdminMoviesPage from './pages/super-admin/SuperAdminMoviesPage';
+import SuperAdminAnalyticsPage from './pages/super-admin/SuperAdminAnalyticsPage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -112,6 +116,22 @@ const AppRoutes: React.FC = () => {
           <div className="min-h-screen bg-gray-50">
             <CustomerHeader />
             <CustomerMoviesPage />
+          </div>
+        </ProtectedRoute>
+      } />
+      <Route path="/customer/movies/:id" element={
+        <ProtectedRoute requiredRoles={['CUSTOMER']}>
+          <div className="min-h-screen bg-gray-50">
+            <CustomerHeader />
+            <CustomerMovieDetailPage />
+          </div>
+        </ProtectedRoute>
+      } />
+      <Route path="/customer/movies/:id/book" element={
+        <ProtectedRoute requiredRoles={['CUSTOMER']}>
+          <div className="min-h-screen bg-gray-50">
+            <CustomerHeader />
+            <CustomerBookMoviePage />
           </div>
         </ProtectedRoute>
       } />
@@ -263,6 +283,14 @@ const AppRoutes: React.FC = () => {
           </div>
         </ProtectedRoute>
       } />
+      <Route path="/super-admin/analytics" element={
+        <ProtectedRoute requiredRoles={['SUPER_ADMIN']}>
+          <div className="min-h-screen bg-gray-50">
+            <SuperAdminHeader />
+            <SuperAdminAnalyticsPage />
+          </div>
+        </ProtectedRoute>
+      } />
 
       {/* Admin Routes - Protected by Layout */}
       <Route path="/admin" element={
@@ -343,6 +371,13 @@ const AppRoutes: React.FC = () => {
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
+}
+
+// Renders the floating ChatWidget only when a user is authenticated
+const AuthChat: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return null;
+  return <ChatWidget />;
 };
 
 function App() {
@@ -352,6 +387,8 @@ function App() {
         <AuthProvider>
           <Router>
             <AppRoutes />
+            {/* Global Chat Widget - only when authenticated */}
+            <AuthChat />
             {import.meta.env.DEV && (
               <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
             )}

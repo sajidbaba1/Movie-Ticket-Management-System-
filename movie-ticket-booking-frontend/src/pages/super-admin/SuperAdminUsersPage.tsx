@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button, Input, Card } from '../../components/ui';
+import { getRoleIcon, getRoleLabel } from '../../utils';
 import { useUIStore } from '../../stores/uiStore';
-import toast from 'react-hot-toast';
+import { listUsers, createUser, updateUser, deleteUser, type BackendUser } from '../../services/users';
 
 interface User {
   id: string;
@@ -49,87 +50,24 @@ const SuperAdminUsersPage: React.FC = () => {
     formState: { errors, isSubmitting },
   } = useForm<UserFormData>();
 
-  // Mock data - replace with actual API calls
+  // Fetch from backend
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const mockUsers: User[] = [
-          {
-            id: '1',
-            firstName: 'John',
-            lastName: 'Doe',
-            email: 'john.doe@example.com',
-            phone: '+91-9876543210',
-            role: 'CUSTOMER',
-            isActive: true,
-            isEmailVerified: true,
-            lastLogin: '2024-01-25T10:30:00Z',
-            createdAt: '2024-01-15T10:00:00Z',
-            updatedAt: '2024-01-25T10:30:00Z',
-            totalBookings: 15,
-            totalSpent: 4500
-          },
-          {
-            id: '2',
-            firstName: 'Sarah',
-            lastName: 'Wilson',
-            email: 'sarah.wilson@example.com',
-            phone: '+91-9876543211',
-            role: 'THEATER_OWNER',
-            isActive: true,
-            isEmailVerified: true,
-            lastLogin: '2024-01-24T15:20:00Z',
-            createdAt: '2024-01-10T10:00:00Z',
-            updatedAt: '2024-01-24T15:20:00Z',
-            totalBookings: 0,
-            totalSpent: 0
-          },
-          {
-            id: '3',
-            firstName: 'Mike',
-            lastName: 'Johnson',
-            email: 'mike.johnson@moviehub.com',
-            phone: '+91-9876543212',
-            role: 'ADMIN',
-            isActive: true,
-            isEmailVerified: true,
-            lastLogin: '2024-01-25T09:15:00Z',
-            createdAt: '2024-01-05T10:00:00Z',
-            updatedAt: '2024-01-25T09:15:00Z'
-          },
-          {
-            id: '4',
-            firstName: 'Emily',
-            lastName: 'Davis',
-            email: 'emily.davis@example.com',
-            phone: '+91-9876543213',
-            role: 'CUSTOMER',
-            isActive: false,
-            isEmailVerified: false,
-            createdAt: '2024-01-20T10:00:00Z',
-            updatedAt: '2024-01-22T10:00:00Z',
-            totalBookings: 2,
-            totalSpent: 600
-          },
-          {
-            id: '5',
-            firstName: 'David',
-            lastName: 'Brown',
-            email: 'david.brown@example.com',
-            phone: '+91-9876543214',
-            role: 'THEATER_OWNER',
-            isActive: true,
-            isEmailVerified: true,
-            lastLogin: '2024-01-23T14:45:00Z',
-            createdAt: '2024-01-12T10:00:00Z',
-            updatedAt: '2024-01-23T14:45:00Z'
-          }
-        ];
-        
-        setUsers(mockUsers);
+        const data = await listUsers();
+        const mapped: User[] = data.map((u: BackendUser) => ({
+          id: String(u.id),
+          firstName: u.firstName,
+          lastName: u.lastName,
+          email: u.email,
+          role: u.role,
+          isActive: !!u.active,
+          isEmailVerified: true,
+          createdAt: u.createdAt || '',
+          updatedAt: u.updatedAt || '',
+        }));
+        setUsers(mapped);
       } catch (error) {
         showNotification({
           type: 'error',
@@ -147,16 +85,24 @@ const SuperAdminUsersPage: React.FC = () => {
   const onSubmit = async (data: UserFormData) => {
     try {
       if (editingUser) {
-        // Update existing user
-        const updatedUser: User = {
-          ...editingUser,
-          ...data,
-          updatedAt: new Date().toISOString()
+        // Update existing user via API
+        const payload = {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          role: data.role,
+          active: data.isActive,
         };
-        
-        setUsers(prev => prev.map(user => 
-          user.id === editingUser.id ? updatedUser : user
-        ));
+        const saved = await updateUser(Number(editingUser.id), payload);
+        setUsers(prev => prev.map(user => user.id === editingUser.id ? {
+          ...user,
+          firstName: saved.firstName,
+          lastName: saved.lastName,
+          email: saved.email,
+          role: saved.role,
+          isActive: !!saved.active,
+          updatedAt: saved.updatedAt || new Date().toISOString(),
+        } : user));
         
         showNotification({
           type: 'success',
@@ -164,17 +110,26 @@ const SuperAdminUsersPage: React.FC = () => {
           message: 'User updated successfully'
         });
       } else {
-        // Create new user
-        const newUser: User = {
-          id: Date.now().toString(),
-          ...data,
-          isEmailVerified: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          totalBookings: 0,
-          totalSpent: 0
+        // Create new user via API
+        const payload = {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          role: data.role,
+          active: data.isActive,
         };
-        
+        const saved = await createUser(payload);
+        const newUser: User = {
+          id: String(saved.id),
+          firstName: saved.firstName,
+          lastName: saved.lastName,
+          email: saved.email,
+          role: saved.role,
+          isActive: !!saved.active,
+          isEmailVerified: false,
+          createdAt: saved.createdAt || new Date().toISOString(),
+          updatedAt: saved.updatedAt || new Date().toISOString(),
+        };
         setUsers(prev => [newUser, ...prev]);
         
         showNotification({
@@ -210,28 +165,41 @@ const SuperAdminUsersPage: React.FC = () => {
       type: 'confirmation',
       title: 'Delete User',
       content: `Are you sure you want to delete "${user.firstName} ${user.lastName}"? This action cannot be undone.`,
-      onConfirm: () => {
-        setUsers(prev => prev.filter(u => u.id !== user.id));
-        showNotification({
-          type: 'success',
-          title: 'Success',
-          message: 'User deleted successfully'
-        });
+      onConfirm: async () => {
+        try {
+          await deleteUser(Number(user.id));
+          setUsers(prev => prev.filter(u => u.id !== user.id));
+          showNotification({
+            type: 'success',
+            title: 'Success',
+            message: 'User deleted successfully'
+          });
+        } catch (e) {
+          showNotification({
+            type: 'error',
+            title: 'Error',
+            message: 'Failed to delete user'
+          });
+        }
       }
     });
   };
 
   const handleToggleStatus = async (user: User) => {
     try {
-      const updatedUser = {
+      const saved = await updateUser(Number(user.id), {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        active: !user.isActive,
+      });
+      const updatedUser: User = {
         ...user,
-        isActive: !user.isActive,
-        updatedAt: new Date().toISOString()
+        isActive: !!saved.active,
+        updatedAt: saved.updatedAt || new Date().toISOString(),
       };
-      
-      setUsers(prev => prev.map(u => 
-        u.id === user.id ? updatedUser : u
-      ));
+      setUsers(prev => prev.map(u => u.id === user.id ? updatedUser : u));
       
       showNotification({
         type: 'success',
@@ -263,15 +231,6 @@ const SuperAdminUsersPage: React.FC = () => {
     }
   };
 
-  const getRoleIcon = (role: User['role']) => {
-    switch (role) {
-      case 'SUPER_ADMIN': return '👑';
-      case 'ADMIN': return '🛡️';
-      case 'THEATER_OWNER': return '🏢';
-      case 'CUSTOMER': return '👤';
-      default: return '❓';
-    }
-  };
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -424,7 +383,7 @@ const SuperAdminUsersPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
-                      {getRoleIcon(user.role)} {user.role.replace('_', ' ')}
+                      {getRoleIcon(user.role)} {getRoleLabel(user.role)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -669,7 +628,7 @@ const SuperAdminUsersPage: React.FC = () => {
                     </h3>
                     <p className="text-gray-600">{selectedUser.email}</p>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(selectedUser.role)}`}>
-                      {getRoleIcon(selectedUser.role)} {selectedUser.role.replace('_', ' ')}
+                      {getRoleIcon(selectedUser.role)} {getRoleLabel(selectedUser.role)}
                     </span>
                   </div>
                 </div>

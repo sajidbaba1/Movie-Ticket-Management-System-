@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import NotificationBell from '../notifications/NotificationBell';
 
 const SuperAdminHeader: React.FC = () => {
   const location = useLocation();
@@ -31,11 +32,11 @@ const SuperAdminHeader: React.FC = () => {
           <div className="flex items-center">
             <Link to="/super-admin" className="flex items-center space-x-2">
               <div className="h-8 w-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">🔧</span>
+                <span className="text-white font-bold text-sm">👑</span>
               </div>
               <div>
                 <span className="text-xl font-bold text-gray-900">MovieHub</span>
-                <span className="ml-2 text-sm text-purple-600 font-medium">Super Admin</span>
+                <span className="ml-2 text-sm text-purple-600 font-medium">👑 Super Admin</span>
               </div>
             </Link>
           </div>
@@ -59,6 +60,10 @@ const SuperAdminHeader: React.FC = () => {
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
+            {/* Notifications */}
+            <div className="hidden md:block">
+              <NotificationBell />
+            </div>
             {/* User Dropdown */}
             <div className="relative">
               <button
@@ -82,7 +87,7 @@ const SuperAdminHeader: React.FC = () => {
                   <div className="px-4 py-2 border-b border-gray-100">
                     <p className="text-sm font-medium text-gray-900">{user?.firstName} {user?.lastName}</p>
                     <p className="text-sm text-gray-500">{user?.email}</p>
-                    <p className="text-xs text-purple-600 font-medium">Super Administrator</p>
+                    <p className="text-xs text-purple-600 font-medium">👑 Super Administrator</p>
                   </div>
 
                   <Link

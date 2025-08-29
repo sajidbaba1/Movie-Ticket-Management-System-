@@ -84,6 +84,31 @@ export class AuthService {
     ];
   }
 
+  // OTP: request code
+  async sendOtp(email: string): Promise<{ message: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/auth/otp/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.message || 'Failed to send OTP');
+    return data;
+  }
+
+  // OTP: verify code and login
+  async verifyOtp(email: string, code: string): Promise<{ user: User; token: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/auth/otp/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.message || 'Invalid or expired OTP');
+    if (!data.user || !data.token) throw new Error('Invalid response from server');
+    return data;
+  }
+
   public static getInstance(): AuthService {
     if (!AuthService.instance) {
       AuthService.instance = new AuthService();

@@ -68,6 +68,47 @@ export const formatUserRole = (role: string): string => {
   return role.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
 };
 
+// Role helpers (icons + normalized labels)
+export type NormalizedRole = 'SUPER_ADMIN' | 'ADMIN' | 'THEATER_OWNER' | 'CUSTOMER' | 'UNKNOWN';
+
+export const normalizeRole = (role: string | undefined | null): NormalizedRole => {
+  const key = (role || '').toString().trim().replace(/\s+/g, '_').toUpperCase();
+  switch (key) {
+    case 'SUPER_ADMIN':
+    case 'ADMIN':
+    case 'THEATER_OWNER':
+    case 'CUSTOMER':
+      return key as NormalizedRole;
+    default:
+      return 'UNKNOWN';
+  }
+};
+
+export const getRoleIcon = (role: string | undefined | null): string => {
+  switch (normalizeRole(role)) {
+    case 'SUPER_ADMIN':
+      return '👑';
+    case 'ADMIN':
+      return '🛡️';
+    case 'THEATER_OWNER':
+      return '🏢';
+    case 'CUSTOMER':
+      return '👤';
+    default:
+      return '❓';
+  }
+};
+
+export const getRoleLabel = (role: string | undefined | null): string => {
+  const nr = normalizeRole(role);
+  if (nr === 'UNKNOWN') return 'Unknown';
+  return formatUserRole(nr);
+};
+
+export const getRoleWithIcon = (role: string | undefined | null): string => {
+  return `${getRoleIcon(role)} ${getRoleLabel(role)}`.trim();
+};
+
 // Search utilities
 export const filterByQuery = <T>(
   items: T[],

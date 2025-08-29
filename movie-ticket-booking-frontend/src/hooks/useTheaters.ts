@@ -39,10 +39,7 @@ export const useTheater = (id: number) => {
 export const useTheatersByCity = (city: string) => {
   return useQuery({
     queryKey: theaterKeys.byCity(city),
-    queryFn: async () => {
-      // TODO: Implement getTheatersByCity in theaterService
-      return [];
-    },
+    queryFn: async () => theaterService.getTheatersByCity(city),
     enabled: !!city,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -123,7 +120,9 @@ export const useUpdateTheater = () => {
 
       // Invalidate lists to refetch
       queryClient.invalidateQueries({ queryKey: theaterKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: theaterKeys.byOwner(updatedTheater.owner.id) });
+      if (updatedTheater.owner) {
+        queryClient.invalidateQueries({ queryKey: theaterKeys.byOwner(updatedTheater.owner.id) });
+      }
       queryClient.invalidateQueries({ queryKey: theaterKeys.byCity(updatedTheater.city) });
       toast.success('Theater updated successfully!');
     },

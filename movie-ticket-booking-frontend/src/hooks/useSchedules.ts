@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { scheduleService } from '../services/scheduleService';
-import type { Schedule, CreateScheduleRequest } from '../types';
+import type { CreateScheduleRequest } from '../types';
 import toast from 'react-hot-toast';
 
 // Get schedules for current theater owner

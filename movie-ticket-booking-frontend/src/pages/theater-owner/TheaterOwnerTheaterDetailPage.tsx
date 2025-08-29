@@ -182,11 +182,15 @@ const TheaterOwnerTheaterDetailPage: React.FC = () => {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Owner Information</h2>
               <div className="space-y-2">
                 <p className="font-medium text-gray-900">
-                  {theater.owner.firstName} {theater.owner.lastName}
+                  {(theater.owner?.firstName || 'Unknown')} {(theater.owner?.lastName || '')}
                 </p>
-                <p className="text-sm text-gray-600">{theater.owner.email}</p>
-                <p className="text-sm text-gray-600">Role: {theater.owner.role}</p>
-                <p className="text-sm text-gray-600">Owner ID: {theater.owner.id}</p>
+                {theater.owner?.email && (
+                  <p className="text-sm text-gray-600">{theater.owner.email}</p>
+                )}
+                {theater.owner?.role && (
+                  <p className="text-sm text-gray-600">Role: {theater.owner.role}</p>
+                )}
+                <p className="text-sm text-gray-600">Owner ID: {theater.owner?.id ?? '-'}</p>
               </div>
             </Card>
           </div>

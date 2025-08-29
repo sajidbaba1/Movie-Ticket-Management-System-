@@ -16,6 +16,8 @@ interface AuthContextType extends AuthState {
   signup: (userData: SignupData) => Promise<void>;
   logout: () => void;
   clearError: () => void;
+  sendOtp: (email: string) => Promise<void>;
+  loginWithOtp: (email: string, code: string) => Promise<void>;
 }
 
 interface SignupData {
@@ -223,6 +225,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'LOGOUT' });
   };
 
+  const sendOtp = async (email: string): Promise<void> => {
+    dispatch({ type: 'LOGIN_START' });
+    try {
+      await authService.sendOtp(email);
+      dispatch({ type: 'CLEAR_ERROR' });
+    } catch (e: any) {
+      dispatch({ type: 'LOGIN_FAILURE', payload: e?.message || 'Failed to send OTP' });
+      throw e;
+    }
+  };
+
+  const loginWithOtp = async (email: string, code: string): Promise<void> => {
+    dispatch({ type: 'LOGIN_START' });
+    try {
+      const { user, token } = await authService.verifyOtp(email, code);
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('token', token);
+      dispatch({ type: 'LOGIN_SUCCESS', payload: user });
+    } catch (e: any) {
+      dispatch({ type: 'LOGIN_FAILURE', payload: e?.message || 'Invalid or expired OTP' });
+      throw e;
+    }
+  };
+
   const clearError = (): void => {
     dispatch({ type: 'CLEAR_ERROR' });
   };
@@ -233,6 +259,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signup,
     logout,
     clearError,
+    sendOtp,
+    loginWithOtp,
   };
 
   return (

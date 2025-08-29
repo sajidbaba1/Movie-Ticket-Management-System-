@@ -10,6 +10,10 @@ interface TheaterCardProps {
   onDelete?: (theater: Theater) => void;
   onToggleStatus?: (theater: Theater) => void;
   showActions?: boolean;
+  // Optional approve action (for admin)
+  onApprove?: (theater: Theater) => void;
+  // Optional override for the View Details link
+  getViewLink?: (theater: Theater) => string;
 }
 
 const TheaterCard: React.FC<TheaterCardProps> = ({
@@ -17,8 +21,11 @@ const TheaterCard: React.FC<TheaterCardProps> = ({
   onEdit,
   onDelete,
   onToggleStatus,
-  showActions = true
+  showActions = true,
+  onApprove,
+  getViewLink
 }) => {
+  const viewTo = getViewLink ? getViewLink(theater) : `/theater-owner/theaters/${theater.id}`;
   return (
     <Card className="theater-card group" padding="lg">
       <div className="space-y-4">
@@ -104,7 +111,7 @@ const TheaterCard: React.FC<TheaterCardProps> = ({
         {showActions && (
           <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200">
             <Link
-              to={`/theater-owner/theaters/${theater.id}`}
+              to={viewTo}
               className="flex-1 min-w-0"
             >
               <Button
@@ -115,6 +122,17 @@ const TheaterCard: React.FC<TheaterCardProps> = ({
                 View Details
               </Button>
             </Link>
+
+            {onApprove && !theater.approved && (
+              <Button
+                variant="success"
+                size="sm"
+                onClick={() => onApprove(theater)}
+                className="flex-1 min-w-0"
+              >
+                Approve
+              </Button>
+            )}
 
             {onEdit && (
               <Button

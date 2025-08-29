@@ -43,6 +43,7 @@ public class ScheduleController {
   public List<ScheduleResponse> getAllSchedules() {
     return scheduleRepository.findByActiveTrue()
         .stream()
+        .filter(s -> s.getTheater() != null && s.getTheater().isApproved() && s.getTheater().isActive())
         .map(ScheduleResponse::from)
         .toList();
   }
@@ -70,6 +71,7 @@ public class ScheduleController {
       @Parameter(description = "Theater ID", required = true) @PathVariable Long theaterId) {
     return scheduleRepository.findByTheaterIdAndActiveTrue(theaterId)
         .stream()
+        .filter(s -> s.getTheater() != null && s.getTheater().isApproved() && s.getTheater().isActive())
         .map(ScheduleResponse::from)
         .toList();
   }
@@ -118,6 +120,7 @@ public class ScheduleController {
       @Parameter(description = "Movie ID", required = true) @PathVariable Long movieId) {
     return scheduleRepository.findByMovieIdAndActiveTrue(movieId)
         .stream()
+        .filter(s -> s.getTheater() != null && s.getTheater().isApproved() && s.getTheater().isActive())
         .map(ScheduleResponse::from)
         .toList();
   }
@@ -133,6 +136,7 @@ public class ScheduleController {
       @Parameter(description = "End date and time", required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
     return scheduleRepository.findByShowTimeBetweenAndActiveTrue(startTime, endTime)
         .stream()
+        .filter(s -> s.getTheater() != null && s.getTheater().isApproved() && s.getTheater().isActive())
         .map(ScheduleResponse::from)
         .toList();
   }

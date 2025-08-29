@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMovies, useDeleteMovie, useMovieSearch } from '../../hooks';
+
 import { MovieList } from '../../components/movies';
 import { Button, Input, Select, Alert } from '../../components/ui';
 import { ROUTES, MOVIE_GENRES } from '../../constants';
@@ -16,14 +17,14 @@ const MoviesPage: React.FC = () => {
   // Hooks for data fetching and mutations
   const { data: allMovies = [], isLoading, error } = useMovies();
   const deleteMovieMutation = useDeleteMovie();
-  const { searchResults, isSearching } = useMovieSearch();
+  const { searchResults, isSearching, setQuery } = useMovieSearch();
 
   // Filter movies based on search and filters
   const filteredMovies = React.useMemo(() => {
     let movies = searchQuery ? searchResults : allMovies;
 
     if (selectedGenre) {
-      movies = movies.filter(movie => movie.genre === selectedGenre);
+      movies = movies.filter(movie => (movie.genre || '') === selectedGenre);
     }
 
     if (showActiveOnly) {
@@ -77,7 +78,11 @@ const MoviesPage: React.FC = () => {
           <Input
             placeholder="Search movies by title, director, or genre..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSearchQuery(val);
+              setQuery(val);
+            }}
             icon={<span>🔍</span>}
           />
 

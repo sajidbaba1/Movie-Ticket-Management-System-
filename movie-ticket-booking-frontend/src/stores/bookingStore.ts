@@ -49,7 +49,7 @@ const initialState: BookingState = {
 export const useBookingStore = create<BookingState & BookingActions>()(
   devtools(
     persist(
-      (set, get) => ({
+      (set, _get) => ({
         ...initialState,
 
         setSelectedMovie: (movie) =>

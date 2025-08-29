@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMovies } from '../../hooks/useMovies';
+import { useMovieSearch } from '../../hooks/useMovies';
 import { useTheaters } from '../../hooks/useTheaters';
 import { Button, Input, Card } from '../../components/ui';
 import { MovieCard } from '../../components/movies';
@@ -8,19 +9,24 @@ import type { Theater } from '../../types';
 
 const CustomerMoviesPage: React.FC = () => {
   const { data: movies = [] } = useMovies();
+  const { searchResults, setQuery, isSearching } = useMovieSearch();
   const { data: theaters = [] } = useTheaters();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
 
   // Filter movies based on search and filters
-  const filteredMovies = movies.filter((movie) => {
-    const matchesSearch = movie.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      movie.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesGenre = !selectedGenre || movie.genre === selectedGenre;
-
-    return movie.active && matchesSearch && matchesGenre;
-  });
+  const filteredMovies = useMemo(() => {
+    const base = searchTerm ? searchResults : movies;
+    return base.filter((movie) => {
+      const title = (movie.title || '').toLowerCase();
+      const desc = (movie.description || '').toLowerCase();
+      const matchesSearch = title.includes((searchTerm || '').toLowerCase()) ||
+        desc.includes((searchTerm || '').toLowerCase());
+      const matchesGenre = !selectedGenre || (movie.genre || '') === selectedGenre;
+      return !!movie.active && matchesSearch && matchesGenre;
+    });
+  }, [movies, searchResults, searchTerm, selectedGenre]);
 
   // Get unique genres and cities
   const genres = [...new Set(movies.map(movie => movie.genre))];
@@ -46,7 +52,11 @@ const CustomerMoviesPage: React.FC = () => {
                 type="text"
                 placeholder="Search by title or description..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSearchTerm(val);
+                  setQuery(val);
+                }}
               />
             </div>
             <div>
@@ -87,7 +97,9 @@ const CustomerMoviesPage: React.FC = () => {
         </Card>
 
         {/* Movies Grid */}
-        {filteredMovies.length > 0 ? (
+        {isSearching ? (
+          <div className="text-center py-16">Searching...</div>
+        ) : filteredMovies.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredMovies.map((movie) => (
               <div key={movie.id} className="space-y-4">

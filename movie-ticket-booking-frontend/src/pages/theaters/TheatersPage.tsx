@@ -4,10 +4,11 @@ import { useTheaters, useDeleteTheater } from '../../hooks/useTheaters';
 import { TheaterList } from '../../components/theaters';
 import type { Theater } from '../../types';
 import { toast } from 'react-hot-toast';
+import { theaterService } from '../../services/theaterService';
 
 const TheatersPage: React.FC = () => {
   const navigate = useNavigate();
-  const { data: theaters = [], isLoading, error } = useTheaters();
+  const { data: theaters = [], isLoading, error, refetch } = useTheaters();
   const deleteTheaterMutation = useDeleteTheater();
   const [deleteConfirm, setDeleteConfirm] = useState<Theater | null>(null);
 
@@ -21,6 +22,17 @@ const TheatersPage: React.FC = () => {
 
   const handleDelete = (theater: Theater) => {
     setDeleteConfirm(theater);
+  };
+
+  const handleApprove = async (theater: Theater) => {
+    try {
+      await theaterService.updateApprovalStatus(Number(theater.id), true);
+      toast.success(`Approved "${theater.name}"`);
+      await refetch?.();
+    } catch (err) {
+      console.error('Error approving theater:', err);
+      toast.error('Failed to approve theater');
+    }
   };
 
   const confirmDelete = async () => {
@@ -65,6 +77,8 @@ const TheatersPage: React.FC = () => {
         theaters={theaters as Theater[]}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onApprove={handleApprove}
+        getViewLink={(t) => `/theaters/${t.id}`}
         onCreateNew={handleCreateNew}
         isLoading={isLoading}
         showActions={true}
