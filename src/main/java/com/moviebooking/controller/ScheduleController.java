@@ -34,7 +34,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/api/schedules")
-@CrossOrigin(origins = "http://localhost:5173")
 @Tag(name = "Schedule Management", description = "APIs for managing movie schedules and showtimes")
 public class ScheduleController {
 
