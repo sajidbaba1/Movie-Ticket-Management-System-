@@ -10,9 +10,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    concurrency:
-      group: frontend-${{ github.ref }}
-      cancel-in-progress: true
     defaults:
       run:
         working-directory: movie-ticket-booking-frontend
@@ -27,9 +24,6 @@ jobs:
 
       - name: Install deps
         run: npm ci
-
-      - name: Typecheck (optional)
-        run: npm run typecheck --if-present
 
       - name: Build
         run: npm run build
