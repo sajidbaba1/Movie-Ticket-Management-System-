@@ -10,6 +10,7 @@ import com.moviebooking.repository.ApprovalRequestRepository;
 import com.moviebooking.repository.EventLogRepository;
 import com.moviebooking.repository.UserRepository;
 import com.moviebooking.repository.TheaterRepository;
+import com.moviebooking.repository.MovieRepository;
 import com.moviebooking.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -54,6 +55,9 @@ public class ScheduleController {
 
   @Autowired
   private TheaterRepository theaterRepository;
+
+  @Autowired
+  private MovieRepository movieRepository;
 
   @GetMapping
   @Operation(summary = "Get all schedules", description = "Retrieve a list of all active schedules")
@@ -164,29 +168,77 @@ public class ScheduleController {
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "Schedule created successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Schedule.class))),
       @ApiResponse(responseCode = "400", description = "Invalid input data"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized"),
+      @ApiResponse(responseCode = "403", description = "Forbidden"),
+      @ApiResponse(responseCode = "404", description = "Related entity not found"),
       @ApiResponse(responseCode = "500", description = "Internal server error")
   })
-  public Schedule createSchedule(
-      @Parameter(description = "Schedule object", required = true) @RequestBody Schedule schedule) {
-    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-    String email = auth.getName();
-    User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
-    
-    if (user.getRole() == User.UserRole.THEATER_OWNER) {
-      List<Theater> theaters = theaterRepository.findByOwnerId(user.getId());
-      if (theaters.isEmpty()) {
-        throw new RuntimeException("Theater not found for user");
+  public ResponseEntity<?> createSchedule(
+      @Parameter(description = "Schedule object", required = true) @RequestBody Schedule schedule,
+      @RequestHeader(value = "Authorization", required = false) String authHeader) {
+    try {
+      User user = resolveUser(authHeader);
+      if (user == null) {
+        return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
       }
-      Theater theater = theaters.get(0);
-      schedule.setTheater(theater);
-      schedule.setStatus(Schedule.Status.ON_SALE);
-    } else if (user.getRole() == User.UserRole.ADMIN) {
-      if (schedule.getStatus() == null) {
-        schedule.setStatus(Schedule.Status.ON_SALE);
+
+      // Validate movie
+      if (schedule.getMovie() == null || schedule.getMovie().getId() == null) {
+        return ResponseEntity.badRequest().body(Map.of("message", "movie.id is required"));
       }
+      if (!movieRepository.existsById(schedule.getMovie().getId())) {
+        return ResponseEntity.status(404).body(Map.of("message", "Movie not found"));
+      }
+
+      // Theater handling by role
+      if (user.getRole() == User.UserRole.THEATER_OWNER) {
+        Long requestedTheaterId = schedule.getTheater() != null ? schedule.getTheater().getId() : null;
+        List<Theater> myTheaters = theaterRepository.findByOwnerId(user.getId());
+        if (myTheaters.isEmpty()) {
+          return ResponseEntity.status(400).body(Map.of("message", "No theater found for owner. Please create a theater first."));
+        }
+        Theater theaterToUse;
+        if (requestedTheaterId != null) {
+          Optional<Theater> t = theaterRepository.findById(requestedTheaterId);
+          if (t.isEmpty()) return ResponseEntity.status(404).body(Map.of("message", "Theater not found"));
+          if (t.get().getOwner() == null || !t.get().getOwner().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).body(Map.of("message", "You do not own the selected theater"));
+          }
+          theaterToUse = t.get();
+        } else {
+          if (myTheaters.size() > 1) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Multiple theaters found. Please select a theater."));
+          }
+          theaterToUse = myTheaters.get(0);
+        }
+        schedule.setTheater(theaterToUse);
+        if (schedule.getStatus() == null) schedule.setStatus(Schedule.Status.ON_SALE);
+      } else if (user.getRole() == User.UserRole.ADMIN) {
+        if (schedule.getTheater() == null || schedule.getTheater().getId() == null) {
+          return ResponseEntity.badRequest().body(Map.of("message", "theater.id is required for admin"));
+        }
+        if (!theaterRepository.existsById(schedule.getTheater().getId())) {
+          return ResponseEntity.status(404).body(Map.of("message", "Theater not found"));
+        }
+        if (schedule.getStatus() == null) schedule.setStatus(Schedule.Status.ON_SALE);
+      }
+
+      // Basic required fields
+      if (schedule.getShowTime() == null) {
+        return ResponseEntity.badRequest().body(Map.of("message", "showTime is required"));
+      }
+      if (schedule.getPrice() == null || schedule.getAvailableSeats() == null || schedule.getTotalSeats() == null) {
+        return ResponseEntity.badRequest().body(Map.of("message", "price, availableSeats and totalSeats are required"));
+      }
+      if (schedule.getAvailableSeats() < 0 || schedule.getTotalSeats() <= 0 || schedule.getAvailableSeats() > schedule.getTotalSeats()) {
+        return ResponseEntity.badRequest().body(Map.of("message", "Invalid seat counts"));
+      }
+
+      Schedule saved = scheduleRepository.save(schedule);
+      return ResponseEntity.ok(saved);
+    } catch (Exception e) {
+      return ResponseEntity.status(500).body(Map.of("message", "Internal server error"));
     }
-    
-    return scheduleRepository.save(schedule);
   }
 
   @PutMapping("/{id}")
@@ -271,9 +323,8 @@ public class ScheduleController {
       if (opt.isEmpty()) return ResponseEntity.status(404).body(java.util.Map.of("message", "Schedule not found"));
       Schedule s = opt.get();
       Schedule.Status from = s.getStatus();
-      s.setStatus(Schedule.Status.DRAFT); // ensure draft before submit
-      s.setStatus(Schedule.Status.APPROVED == s.getStatus() ? s.getStatus() : Schedule.Status.DRAFT);
-      s.setStatus(Schedule.Status.DRAFT); // normalize
+      // normalize to DRAFT when submitting for approval
+      s.setStatus(Schedule.Status.DRAFT);
       scheduleRepository.save(s);
 
       ApprovalRequest ar = new ApprovalRequest();
@@ -353,6 +404,17 @@ public class ScheduleController {
   private User getUser(String authorization) {
     if (authorization == null || !authorization.startsWith("Bearer ")) return null;
     return authService.validateToken(authorization.substring(7));
+  }
+
+  // Resolve user from Spring Security context or fallback to Authorization header
+  private User resolveUser(String authorization) {
+    try {
+      Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+      if (auth != null && auth.isAuthenticated() && auth.getName() != null && !"anonymousUser".equals(auth.getName())) {
+        return userRepository.findByEmail(auth.getName()).orElse(null);
+      }
+    } catch (Exception ignored) {}
+    return getUser(authorization);
   }
 
   // Lightweight DTO to avoid serializing lazy proxies for movie/theater
