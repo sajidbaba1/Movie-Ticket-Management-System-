@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: movie-booking-backend:local
+    container_name: movie-backend
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./deploy/local.env
+    environment:
+      # Allow overriding or adding on top of env_file
+      - SERVER_PORT=8080
+    restart: unless-stopped
