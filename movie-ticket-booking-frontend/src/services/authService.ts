@@ -1,6 +1,9 @@
 import type { User, CreateUserRequest } from '../types';
 
-const API_BASE_URL = 'http://localhost:8080';
+// Prefer Vite env var, then production backend, then localhost
+const API_BASE_URL = (import.meta as any)?.env?.VITE_API_BASE_URL ||
+  (typeof window !== 'undefined' && (window as any)?.ENV?.API_BASE_URL) ||
+  'http://localhost:8080';
 
 // Mock authentication service (will be replaced with real API calls)
 export class AuthService {
@@ -106,6 +109,7 @@ export class AuthService {
     const data = await res.json();
     if (!res.ok) throw new Error(data?.message || 'Invalid or expired OTP');
     if (!data.user || !data.token) throw new Error('Invalid response from server');
+    try { localStorage.setItem('token', data.token); } catch {}
     return data;
   }
 
@@ -131,20 +135,24 @@ export class AuthService {
       const data = await response.json();
       console.log('Backend login response:', data);
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
+      if (!response.ok) throw new Error(data.message || 'Login failed');
 
-      if (!data.user || !data.token) {
-        throw new Error(data.message || 'Invalid response from server');
-      }
+      if (!data.user || !data.token) throw new Error(data.message || 'Invalid response from server');
+
+      // Persist JWT for subsequent API calls
+      try { localStorage.setItem('token', data.token); } catch {}
 
       return { user: data.user, token: data.token };
     } catch (error) {
       console.error('Login API error:', error);
-      // If backend is not available, fall back to mock authentication
-      console.warn('Backend not available, using mock authentication:', error);
-      return this.mockLogin(email, password);
+      // Only fall back to mock on network/availability errors
+      if (error instanceof TypeError) {
+        console.warn('Backend not available, using mock authentication:', error);
+        const mock = await this.mockLogin(email, password);
+        try { localStorage.setItem('token', mock.token); } catch {}
+        return mock;
+      }
+      throw error;
     }
   }
 
@@ -170,20 +178,24 @@ export class AuthService {
       const data = await response.json();
       console.log('Backend signup response:', data);
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Signup failed');
-      }
+      if (!response.ok) throw new Error(data.message || 'Signup failed');
 
-      if (!data.user || !data.token) {
-        throw new Error(data.message || 'Invalid response from server');
-      }
+      if (!data.user || !data.token) throw new Error(data.message || 'Invalid response from server');
+
+      // Persist JWT for subsequent API calls
+      try { localStorage.setItem('token', data.token); } catch {}
 
       return { user: data.user, token: data.token };
     } catch (error) {
       console.error('Signup API error:', error);
-      // If backend is not available, fall back to mock signup
-      console.warn('Backend not available, using mock signup:', error);
-      return this.mockSignup(userData);
+      // Only fall back to mock on network/availability errors
+      if (error instanceof TypeError) {
+        console.warn('Backend not available, using mock signup:', error);
+        const mock = await this.mockSignup(userData);
+        try { localStorage.setItem('token', mock.token); } catch {}
+        return mock;
+      }
+      throw error;
     }
   }
 
