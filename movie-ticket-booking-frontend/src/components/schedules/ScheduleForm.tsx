@@ -73,8 +73,15 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
   ];
 
   const handleFormSubmit = (data: CreateScheduleRequest) => {
+    // datetime-local supplies 'YYYY-MM-DDTHH:mm'; backend LocalDateTime prefers seconds
+    const showTimeRaw = data.showTime || '';
+    const showTime = showTimeRaw.length === 16
+      ? `${showTimeRaw}:00`
+      : showTimeRaw; // keep if already contains seconds
+
     const formData = {
       ...data,
+      showTime,
       movie: { id: Number(data.movie.id) },
       theater: { id: Number(data.theater.id) },
       price: Number(data.price),
