@@ -5,6 +5,8 @@ import com.moviebooking.entity.User.UserRole;
 import com.moviebooking.repository.UserRepository;
 import com.moviebooking.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,7 +25,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/api/admin")
-@CrossOrigin(origins = "http://localhost:5173")
 @Tag(name = "Admin Management", description = "APIs for Super Admin to manage admin users")
 public class AdminController {
 
@@ -32,6 +33,9 @@ public class AdminController {
 
   @Autowired
   private AuthService authService;
+
+  @Value("${SUPERADMIN_BOOTSTRAP_TOKEN:}")
+  private String bootstrapToken;
 
   // Helper method to validate Super Admin access
   private boolean validateSuperAdminAccess(String authHeader) {
@@ -42,6 +46,51 @@ public class AdminController {
     String token = authHeader.substring(7);
     User user = authService.validateToken(token);
     return user != null && user.getRole() == UserRole.SUPER_ADMIN;
+  }
+
+  // Bootstrap: create initial SUPER_ADMIN when none exists, guarded by token
+  @PostMapping("/bootstrap")
+  @Operation(summary = "Bootstrap super admin", description = "Create a SUPER_ADMIN if none exists. Requires X-Bootstrap-Token header matching server token.")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Super admin created", content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))),
+      @ApiResponse(responseCode = "400", description = "Already exists or invalid input"),
+      @ApiResponse(responseCode = "401", description = "Invalid bootstrap token"),
+      @ApiResponse(responseCode = "500", description = "Internal server error")
+  })
+  public ResponseEntity<?> bootstrapSuperAdmin(
+      @RequestHeader(value = "X-Bootstrap-Token", required = false) String token,
+      @RequestBody User payload) {
+    try {
+      // ensure no super admin exists
+      if (userRepository.countByRole(UserRole.SUPER_ADMIN) > 0) {
+        return ResponseEntity.badRequest().body(Map.of("message", "SUPER_ADMIN already exists"));
+      }
+      // validate token
+      if (bootstrapToken == null || bootstrapToken.isBlank() || token == null || !bootstrapToken.equals(token)) {
+        return ResponseEntity.status(401).body(Map.of("message", "Invalid bootstrap token"));
+      }
+      if (payload == null || payload.getEmail() == null || payload.getPassword() == null
+          || payload.getFirstName() == null || payload.getLastName() == null) {
+        return ResponseEntity.badRequest().body(Map.of("message", "firstName, lastName, email, password required"));
+      }
+      if (userRepository.findByEmail(payload.getEmail()).isPresent()) {
+        return ResponseEntity.badRequest().body(Map.of("message", "Email already exists"));
+      }
+      User superAdmin = new User();
+      superAdmin.setFirstName(payload.getFirstName());
+      superAdmin.setLastName(payload.getLastName());
+      superAdmin.setEmail(payload.getEmail());
+      superAdmin.setRole(UserRole.SUPER_ADMIN);
+      superAdmin.setActive(true);
+      superAdmin.setCreatedAt(LocalDateTime.now());
+      String password = payload.getPassword();
+      superAdmin.setPassword("[STORED_IN_AUTH_SERVICE]");
+      User saved = userRepository.save(superAdmin);
+      authService.addPasswordToStore(saved.getEmail().toLowerCase(), password);
+      return ResponseEntity.ok(saved);
+    } catch (Exception e) {
+      return ResponseEntity.status(500).body(Map.of("message", "Internal server error"));
+    }
   }
 
   @GetMapping("/admins")
@@ -55,13 +104,13 @@ public class AdminController {
       @Parameter(description = "Authorization header with Bearer token", required = true) @RequestHeader("Authorization") String authHeader) {
     try {
       if (!validateSuperAdminAccess(authHeader)) {
-        return ResponseEntity.status(401).build();
+        return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
       }
 
       List<User> admins = userRepository.findByRole(UserRole.ADMIN);
       return ResponseEntity.ok(admins);
     } catch (Exception e) {
-      return ResponseEntity.status(500).build();
+      return ResponseEntity.status(500).body(Map.of("message", "Internal server error"));
     }
   }
 
@@ -78,7 +127,7 @@ public class AdminController {
       @Parameter(description = "Admin user ID", required = true) @PathVariable Long id) {
     try {
       if (!validateSuperAdminAccess(authHeader)) {
-        return ResponseEntity.status(401).build();
+        return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
       }
 
       Optional<User> admin = userRepository.findById(id);
@@ -88,7 +137,7 @@ public class AdminController {
         return ResponseEntity.notFound().build();
       }
     } catch (Exception e) {
-      return ResponseEntity.status(500).build();
+      return ResponseEntity.status(500).body(Map.of("message", "Internal server error"));
     }
   }
 
@@ -100,17 +149,17 @@ public class AdminController {
       @ApiResponse(responseCode = "400", description = "Invalid input data or email already exists"),
       @ApiResponse(responseCode = "500", description = "Internal server error")
   })
-  public ResponseEntity<User> createAdmin(
+  public ResponseEntity<?> createAdmin(
       @Parameter(description = "Authorization header with Bearer token", required = true) @RequestHeader("Authorization") String authHeader,
       @Parameter(description = "Admin user object", required = true) @RequestBody User adminUser) {
     try {
       if (!validateSuperAdminAccess(authHeader)) {
-        return ResponseEntity.status(401).build();
+        return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
       }
 
       // Check if email already exists
       if (userRepository.findByEmail(adminUser.getEmail()).isPresent()) {
-        return ResponseEntity.badRequest().build();
+        return ResponseEntity.badRequest().body(Map.of("message", "Email already exists"));
       }
 
       // Ensure the user is created as ADMIN role
@@ -128,7 +177,7 @@ public class AdminController {
       authService.addPasswordToStore(adminUser.getEmail().toLowerCase(), password);
       return ResponseEntity.ok(savedAdmin);
     } catch (Exception e) {
-      return ResponseEntity.status(500).build();
+      return ResponseEntity.status(500).body(Map.of("message", "Internal server error"));
     }
   }
 

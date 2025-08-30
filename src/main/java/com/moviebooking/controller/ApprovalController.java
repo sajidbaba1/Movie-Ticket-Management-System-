@@ -13,7 +13,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/approvals")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:5175"})
 public class ApprovalController {
 
     private final ApprovalRequestRepository approvalRepo;
@@ -47,6 +46,9 @@ public class ApprovalController {
                                      @RequestBody(required = false) Map<String, String> body) {
         User reviewer = getUser(authorization);
         if (reviewer == null) return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+        if (reviewer.getRole() != User.UserRole.ADMIN && reviewer.getRole() != User.UserRole.SUPER_ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("message", "Forbidden"));
+        }
         String notes = body != null ? body.getOrDefault("notes", null) : null;
 
         switch (type.toUpperCase()) {
@@ -125,6 +127,9 @@ public class ApprovalController {
                                   @RequestBody(required = false) Map<String, String> body) {
         User reviewer = getUser(authorization);
         if (reviewer == null) return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+        if (reviewer.getRole() != User.UserRole.ADMIN && reviewer.getRole() != User.UserRole.SUPER_ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("message", "Forbidden"));
+        }
         String notes = body != null ? body.getOrDefault("notes", null) : null;
 
         switch (type.toUpperCase()) {
