@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button, Input, Card } from '../../components/ui';
 import { useUIStore } from '../../stores/uiStore';
+import { approvalService } from '../../services/approvalService';
+import toast from 'react-hot-toast';
 
 interface Movie {
   id: string;
@@ -216,6 +218,26 @@ const SuperAdminMoviesPage: React.FC = () => {
     }
   };
 
+  const handleApprove = async (movie: Movie) => {
+    try {
+      await approvalService.approve('MOVIE', Number(movie.id));
+      toast.success(`Movie "${movie.title}" approved`);
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || 'Failed to approve movie';
+      toast.error(msg);
+    }
+  };
+
+  const handleDeny = async (movie: Movie) => {
+    try {
+      await approvalService.deny('MOVIE', Number(movie.id));
+      toast.success(`Movie "${movie.title}" denied`);
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || 'Failed to deny movie';
+      toast.error(msg);
+    }
+  };
+
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingMovie(null);
@@ -358,6 +380,24 @@ const SuperAdminMoviesPage: React.FC = () => {
                 className="flex-1"
               >
                 ✏️ Edit
+              </Button>
+              <Button
+                onClick={() => handleApprove(movie)}
+                variant="primary"
+                size="sm"
+                className="flex-1"
+                title="Approve Movie"
+              >
+                ✅ Approve
+              </Button>
+              <Button
+                onClick={() => handleDeny(movie)}
+                variant="outline"
+                size="sm"
+                className="flex-1 text-red-600 hover:text-red-700 hover:border-red-300"
+                title="Deny Movie"
+              >
+                ❌ Deny
               </Button>
               <Button
                 onClick={() => handleToggleStatus(movie)}

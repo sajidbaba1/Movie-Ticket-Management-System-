@@ -3,14 +3,20 @@ package com.moviebooking.controller;
 import com.moviebooking.entity.Schedule;
 import com.moviebooking.entity.User;
 import com.moviebooking.entity.ApprovalRequest;
+import com.moviebooking.entity.Theater;
 import com.moviebooking.entity.EventLog;
 import com.moviebooking.repository.ScheduleRepository;
 import com.moviebooking.repository.ApprovalRequestRepository;
 import com.moviebooking.repository.EventLogRepository;
+import com.moviebooking.repository.UserRepository;
+import com.moviebooking.repository.TheaterRepository;
 import com.moviebooking.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -44,6 +50,12 @@ public class ScheduleController {
   @Autowired
   private EventLogRepository eventLogRepository;
 
+  @Autowired
+  private UserRepository userRepository;
+
+  @Autowired
+  private TheaterRepository theaterRepository;
+
   @GetMapping
   @Operation(summary = "Get all schedules", description = "Retrieve a list of all active schedules")
   @ApiResponses(value = {
@@ -53,7 +65,6 @@ public class ScheduleController {
   public List<ScheduleResponse> getAllSchedules() {
     return scheduleRepository.findByActiveTrue()
         .stream()
-        .filter(s -> s.getTheater() != null && s.getTheater().isApproved() && s.getTheater().isActive())
         .map(ScheduleResponse::from)
         .toList();
   }
@@ -81,7 +92,6 @@ public class ScheduleController {
       @Parameter(description = "Theater ID", required = true) @PathVariable Long theaterId) {
     return scheduleRepository.findByTheaterIdAndActiveTrue(theaterId)
         .stream()
-        .filter(s -> s.getTheater() != null && s.getTheater().isApproved() && s.getTheater().isActive())
         .map(ScheduleResponse::from)
         .toList();
   }
@@ -130,7 +140,6 @@ public class ScheduleController {
       @Parameter(description = "Movie ID", required = true) @PathVariable Long movieId) {
     return scheduleRepository.findByMovieIdAndActiveTrue(movieId)
         .stream()
-        .filter(s -> s.getTheater() != null && s.getTheater().isApproved() && s.getTheater().isActive())
         .map(ScheduleResponse::from)
         .toList();
   }
@@ -146,12 +155,12 @@ public class ScheduleController {
       @Parameter(description = "End date and time", required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
     return scheduleRepository.findByShowTimeBetweenAndActiveTrue(startTime, endTime)
         .stream()
-        .filter(s -> s.getTheater() != null && s.getTheater().isApproved() && s.getTheater().isActive())
         .map(ScheduleResponse::from)
         .toList();
   }
 
   @PostMapping
+  @PreAuthorize("hasRole('THEATER_OWNER') or hasRole('ADMIN')")
   @Operation(summary = "Create new schedule", description = "Add a new schedule to the system")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "Schedule created successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Schedule.class))),
@@ -160,6 +169,24 @@ public class ScheduleController {
   })
   public Schedule createSchedule(
       @Parameter(description = "Schedule object", required = true) @RequestBody Schedule schedule) {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    String email = auth.getName();
+    User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+    
+    if (user.getRole() == User.UserRole.THEATER_OWNER) {
+      List<Theater> theaters = theaterRepository.findByOwnerId(user.getId());
+      if (theaters.isEmpty()) {
+        throw new RuntimeException("Theater not found for user");
+      }
+      Theater theater = theaters.get(0);
+      schedule.setTheater(theater);
+      schedule.setStatus(Schedule.Status.ON_SALE);
+    } else if (user.getRole() == User.UserRole.ADMIN) {
+      if (schedule.getStatus() == null) {
+        schedule.setStatus(Schedule.Status.ON_SALE);
+      }
+    }
+    
     return scheduleRepository.save(schedule);
   }
 

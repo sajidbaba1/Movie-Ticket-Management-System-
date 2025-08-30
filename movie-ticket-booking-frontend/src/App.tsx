@@ -36,6 +36,7 @@ import TheaterOwnerEditTheaterPage from './pages/theater-owner/TheaterOwnerEditT
 import TheaterOwnerSchedulesPage from './pages/theater-owner/TheaterOwnerSchedulesPage';
 import TheaterOwnerAnalyticsPage from './pages/theater-owner/TheaterOwnerAnalyticsPage';
 import TheaterOwnerProfilePage from './pages/theater-owner/TheaterOwnerProfilePage';
+import TheaterOwnerMoviesPage from './pages/theater-owner/TheaterOwnerMoviesPage';
 
 // Customer Pages
 import CustomerDashboard from './pages/customer/CustomerDashboard';
@@ -57,6 +58,7 @@ import SuperAdminUsersPage from './pages/super-admin/SuperAdminUsersPage';
 import SuperAdminMoviesPage from './pages/super-admin/SuperAdminMoviesPage';
 import SuperAdminAnalyticsPage from './pages/super-admin/SuperAdminAnalyticsPage';
 import SuperAdminRagChatPage from './pages/super-admin/SuperAdminRagChatPage';
+// Approvals UI removed to simplify flow
 
 // Create a client
 const queryClient = new QueryClient({
@@ -186,6 +188,22 @@ const AppRoutes: React.FC = () => {
           </div>
         </ProtectedRoute>
       } />
+      <Route path="/theater-owner/movies/create" element={
+        <ProtectedRoute requiredRoles={['THEATER_OWNER']}>
+          <div className="min-h-screen bg-gray-50">
+            <TheaterOwnerHeader />
+            <CreateMoviePage />
+          </div>
+        </ProtectedRoute>
+      } />
+      <Route path="/theater-owner/movies" element={
+        <ProtectedRoute requiredRoles={['THEATER_OWNER']}>
+          <div className="min-h-screen bg-gray-50">
+            <TheaterOwnerHeader />
+            <TheaterOwnerMoviesPage />
+          </div>
+        </ProtectedRoute>
+      } />
       <Route path="/theater-owner/theaters" element={
         <ProtectedRoute requiredRoles={['THEATER_OWNER']}>
           <div className="min-h-screen bg-gray-50">
@@ -292,7 +310,6 @@ const AppRoutes: React.FC = () => {
           </div>
         </ProtectedRoute>
       } />
-
       <Route path="/super-admin/rag-chat" element={
         <ProtectedRoute requiredRoles={['SUPER_ADMIN']}>
           <div className="min-h-screen bg-gray-50">

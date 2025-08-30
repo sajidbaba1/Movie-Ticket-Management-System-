@@ -1,8 +1,16 @@
 import axios from 'axios';
 
+// Derive API base URL from environment (Vite) with localhost fallback for dev
+const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as any).env)
+  ? (import.meta as any).env.VITE_API_BASE_URL
+  : process.env.VITE_API_BASE_URL;
+
+// Ensure we always have a base URL
+const baseURL = `${API_BASE || 'http://localhost:8080'}/api`;
+
 // Create an axios instance with default configuration
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

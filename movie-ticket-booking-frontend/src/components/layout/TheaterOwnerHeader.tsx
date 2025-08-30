@@ -48,6 +48,12 @@ const TheaterOwnerHeader: React.FC = () => {
       icon: '🏢'
     },
     {
+      name: 'Movies',
+      href: '/theater-owner/movies',
+      current: location.pathname.startsWith('/theater-owner/movies'),
+      icon: '🎞️'
+    },
+    {
       name: 'Schedules',
       href: '/theater-owner/schedules',
       current: location.pathname.startsWith('/theater-owner/schedules'),

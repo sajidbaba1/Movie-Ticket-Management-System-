@@ -51,6 +51,13 @@ const TheaterOwnerDashboard: React.FC = () => {
       color: 'bg-blue-500',
     },
     {
+      title: 'Add Movie',
+      description: 'Create a movie to schedule shows in your theaters',
+      icon: '🎬',
+      link: '/theater-owner/movies/create',
+      color: 'bg-emerald-500',
+    },
+    {
       title: 'Movie Schedules',
       description: 'Set up movie showtimes and schedules',
       icon: '📅',
@@ -88,6 +95,9 @@ const TheaterOwnerDashboard: React.FC = () => {
               </p>
             </div>
             <div className="hidden md:flex items-center space-x-4">
+              <Link to="/theater-owner/movies/create" className="inline-flex items-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors">
+                + Add Movie
+              </Link>
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">
                   {user?.firstName} {user?.lastName}

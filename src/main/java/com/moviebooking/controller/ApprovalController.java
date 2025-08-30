@@ -96,7 +96,8 @@ public class ApprovalController {
                 if (opt.isEmpty()) return ResponseEntity.status(404).body(Map.of("message", "Schedule not found"));
                 Schedule s = opt.get();
                 Schedule.Status from = s.getStatus();
-                s.setStatus(Schedule.Status.APPROVED);
+                // Mark as approved and immediately put on sale so it becomes bookable
+                s.setStatus(Schedule.Status.ON_SALE);
                 s.setApprovedBy(reviewer);
                 s.setApprovedAt(LocalDateTime.now());
                 s.setApprovalNotes(notes);

@@ -1,0 +1,21 @@
+# Backend dockerignore
+.git
+.gitignore
+.idea
+.vscode
+node_modules
+**/node_modules
+**/.DS_Store
+**/Thumbs.db
+
+# Maven outputs
+/target
+**/target
+
+# Logs
+*.log
+logs
+
+# OS/files
+.DS_Store
+Thumbs.db

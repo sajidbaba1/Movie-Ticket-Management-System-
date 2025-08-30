@@ -1,5 +1,6 @@
 package com.moviebooking.entity;
 
+import com.moviebooking.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
