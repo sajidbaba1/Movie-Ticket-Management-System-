@@ -10,6 +10,10 @@ on:
       - '.github/workflows/backend-docker.yml'
   workflow_dispatch:
 
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -45,3 +49,20 @@ jobs:
           else
             echo "RENDER_DEPLOY_HOOK secret not set; skipping Render deploy trigger";
           fi
+
+      - name: Wait for backend health (optional)
+        env:
+          HEALTH_URL: ${{ secrets.BACKEND_HEALTH_URL }}
+        run: |
+          if [ -z "$HEALTH_URL" ]; then
+            echo "BACKEND_HEALTH_URL not set; skipping health check";
+            exit 0;
+          fi
+          echo "Waiting for backend health at $HEALTH_URL ..."
+          for i in {1..60}; do
+            if curl -fsS "$HEALTH_URL" | grep -q '"status":"UP"'; then
+              echo "Backend is healthy"; exit 0;
+            fi
+            sleep 5;
+          done
+          echo "Health check failed"; exit 1;
