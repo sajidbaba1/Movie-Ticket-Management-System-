@@ -19,7 +19,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/theaters")
-@CrossOrigin(origins = "http://localhost:5173")
 public class TheaterController {
 
     @Autowired

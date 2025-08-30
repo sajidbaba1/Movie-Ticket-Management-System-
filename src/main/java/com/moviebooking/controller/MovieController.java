@@ -26,7 +26,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/api/movies")
-@CrossOrigin(origins = "http://localhost:5173")
 @Tag(name = "Movie Management", description = "APIs for managing movies in the ticket booking system")
 public class MovieController {
 
