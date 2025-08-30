@@ -163,7 +163,7 @@ public class BookingController {
             return ResponseEntity.status(403).body(Map.of("message", "Forbidden"));
         }
         if (booking.getStatus() == Booking.Status.CANCELLED) {
-            return ResponseEntity.ok(booking);
+            return ResponseEntity.ok(BookingResponse.from(booking));
         }
         // restore seats
         Schedule schedule = booking.getSchedule();
@@ -172,7 +172,7 @@ public class BookingController {
 
         booking.setStatus(Booking.Status.CANCELLED);
         Booking saved = bookingRepository.save(booking);
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(BookingResponse.from(saved));
     }
 
     private User getUserOrUnauthorized(String authorization) {
