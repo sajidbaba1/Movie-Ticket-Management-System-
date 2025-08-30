@@ -3,7 +3,7 @@ import axios from 'axios';
 // Derive API base URL from environment (Vite) with localhost fallback for dev
 const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as any).env)
   ? (import.meta as any).env.VITE_API_BASE_URL
-  : process.env.VITE_API_BASE_URL;
+  : undefined; // Avoid using process.env in browser builds
 
 // Ensure we always have a base URL
 const baseURL = `${API_BASE || 'http://localhost:8080'}/api`;
