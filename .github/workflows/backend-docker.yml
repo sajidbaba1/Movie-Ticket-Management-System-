@@ -6,6 +6,7 @@ on:
     paths:
       - 'HMS/**'
       - '.github/workflows/backend-docker.yml'
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
