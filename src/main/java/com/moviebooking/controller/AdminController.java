@@ -100,7 +100,7 @@ public class AdminController {
       @ApiResponse(responseCode = "401", description = "Unauthorized - Super Admin access required"),
       @ApiResponse(responseCode = "500", description = "Internal server error")
   })
-  public ResponseEntity<List<User>> getAllAdmins(
+  public ResponseEntity<?> getAllAdmins(
       @Parameter(description = "Authorization header with Bearer token", required = true) @RequestHeader("Authorization") String authHeader) {
     try {
       if (!validateSuperAdminAccess(authHeader)) {
@@ -122,7 +122,7 @@ public class AdminController {
       @ApiResponse(responseCode = "404", description = "Admin user not found"),
       @ApiResponse(responseCode = "500", description = "Internal server error")
   })
-  public ResponseEntity<User> getAdminById(
+  public ResponseEntity<?> getAdminById(
       @Parameter(description = "Authorization header with Bearer token", required = true) @RequestHeader("Authorization") String authHeader,
       @Parameter(description = "Admin user ID", required = true) @PathVariable Long id) {
     try {
