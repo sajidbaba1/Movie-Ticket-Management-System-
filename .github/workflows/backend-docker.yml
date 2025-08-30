@@ -4,7 +4,9 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'HMS/**'
+      - '**/*.java'
+      - 'Dockerfile'
+      - 'pom.xml'
       - '.github/workflows/backend-docker.yml'
   workflow_dispatch:
 
@@ -27,7 +29,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: ./HMS
+          context: .
           platforms: linux/amd64
           push: true
           tags: |
