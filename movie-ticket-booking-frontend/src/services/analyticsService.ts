@@ -11,6 +11,8 @@ export interface AnalyticsResponse {
     utilization?: number;
   };
   trend: Array<{ date: string; bookings: number }>;
+  revenueTrend?: Array<{ date: string; revenue: number }>;
+  statusTrend?: Array<{ date: string; completed: number; cancelled: number; pending: number }>;
   tops: {
     movies: Array<{ title: string; revenue: number }>;
     theaters: Array<{ name: string; revenue: number }>;

@@ -23,6 +23,7 @@ const SuperAdminAnalyticsPage: React.FC = () => {
   });
 
   const [events, setEvents] = useState<Array<{ id: string; type: string; payload?: any; at?: string }>>([]);
+  const [displayData, setDisplayData] = useState<AnalyticsResponse | undefined>(undefined);
 
   useEffect(() => {
     const es = analyticsService.stream();
@@ -30,6 +31,10 @@ const SuperAdminAnalyticsPage: React.FC = () => {
       try {
         const data = JSON.parse(ev.data);
         setEvents(prev => [{ id: String(Date.now()), type: data.type || 'EVENT', payload: data.payload, at: data.at }, ...prev].slice(0, 50));
+        if (data?.payload) {
+          // Use live payload to update displayed analytics (non-destructive merge)
+          setDisplayData((prev) => ({ ...(prev || {} as any), ...(data.payload || {}) } as AnalyticsResponse));
+        }
       } catch (_) {
         // ignore parse errors
       }
@@ -44,21 +49,26 @@ const SuperAdminAnalyticsPage: React.FC = () => {
     };
   }, []);
 
+  // When REST data changes (range filter), reset displayData baseline
+  useEffect(() => {
+    if (data) setDisplayData(data);
+  }, [data]);
+
   const kpis = useMemo(() => ({
-    revenue: data?.kpis?.revenue ?? 0,
-    bookings: data?.kpis?.bookings ?? 0,
-    completed: data?.kpis?.completed ?? 0,
-    cancelled: data?.kpis?.cancelled ?? 0,
-    utilization: data?.kpis?.utilization ?? 0,
-    movies: data?.system?.movies ?? 0,
-    theaters: data?.system?.theaters ?? 0,
-    users: data?.system?.users ?? 0,
-  }), [data]);
+    revenue: displayData?.kpis?.revenue ?? 0,
+    bookings: displayData?.kpis?.bookings ?? 0,
+    completed: displayData?.kpis?.completed ?? 0,
+    cancelled: displayData?.kpis?.cancelled ?? 0,
+    utilization: displayData?.kpis?.utilization ?? 0,
+    movies: displayData?.system?.movies ?? 0,
+    theaters: displayData?.system?.theaters ?? 0,
+    users: displayData?.system?.users ?? 0,
+  }), [displayData]);
 
   // Charts: Neon theme options
   const bookingsTrendOption = useMemo(() => {
-    const dates = (data?.trend || []).map(d => d.date);
-    const values = (data?.trend || []).map(d => d.bookings);
+    const dates = (displayData?.trend || []).map(d => d.date);
+    const values = (displayData?.trend || []).map(d => d.bookings);
     return {
       backgroundColor: 'transparent',
       tooltip: { trigger: 'axis' },
@@ -97,10 +107,105 @@ const SuperAdminAnalyticsPage: React.FC = () => {
         },
       ],
     } as const;
-  }, [data]);
+  }, [displayData]);
+
+  // Revenue trend line
+  const revenueTrendOption = useMemo(() => {
+    const items = (displayData?.revenueTrend || []);
+    const dates = items.map(i => i.date);
+    const values = items.map(i => Number(i.revenue || 0));
+    return {
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'axis', formatter: (params: any) => `${params[0].axisValue}<br/>Revenue: ${formatCurrency(Number(params[0].data))}` },
+      grid: { left: 40, right: 20, top: 30, bottom: 30 },
+      xAxis: { type: 'category', data: dates, boundaryGap: false, axisLine: { lineStyle: { color: '#a78bfa' } }, axisLabel: { color: '#94a3b8' } },
+      yAxis: { type: 'value', axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: 'rgba(148,163,184,0.15)' } } },
+      series: [{
+        name: 'Revenue', type: 'line', smooth: true, data: values, showSymbol: false,
+        lineStyle: { width: 3, color: '#a78bfa' },
+        areaStyle: { color: 'rgba(167,139,250,0.15)' }
+      }],
+    } as const;
+  }, [displayData]);
+
+  // Status trend stacked area
+  const statusTrendOption = useMemo(() => {
+    const items = (displayData?.statusTrend || []);
+    const dates = items.map(i => i.date);
+    const compl = items.map(i => Number(i.completed || 0));
+    const canc = items.map(i => Number(i.cancelled || 0));
+    const pend = items.map(i => Number(i.pending || 0));
+    return {
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'axis' },
+      legend: { bottom: 0, textStyle: { color: '#64748b' } },
+      grid: { left: 40, right: 20, top: 30, bottom: 40 },
+      xAxis: { type: 'category', data: dates, boundaryGap: false, axisLabel: { color: '#94a3b8' } },
+      yAxis: { type: 'value', axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: 'rgba(148,163,184,0.15)' } } },
+      series: [
+        { name: 'Completed', type: 'line', stack: 'total', smooth: true, areaStyle: {}, data: compl, lineStyle: { color: '#22c55e' } },
+        { name: 'Cancelled', type: 'line', stack: 'total', smooth: true, areaStyle: {}, data: canc, lineStyle: { color: '#ef4444' } },
+        { name: 'Pending', type: 'line', stack: 'total', smooth: true, areaStyle: {}, data: pend, lineStyle: { color: '#f59e0b' } },
+      ],
+      color: ['#22c55e', '#ef4444', '#f59e0b']
+    } as const;
+  }, [displayData]);
+
+  // Pie: Revenue share by top movies
+  const revenueShareOption = useMemo(() => {
+    const items = (displayData?.tops?.movies || []).slice(0, 8);
+    const seriesData = items.map(m => ({ name: m.title, value: Number(m.revenue || 0) }));
+    return {
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+      legend: { bottom: 0, textStyle: { color: '#64748b' } },
+      series: [
+        {
+          name: 'Revenue',
+          type: 'pie',
+          radius: ['40%', '70%'],
+          avoidLabelOverlap: true,
+          itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+          label: { show: false },
+          emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
+          labelLine: { show: false },
+          data: seriesData,
+        },
+      ],
+    } as const;
+  }, [displayData]);
+
+  // Pie: Booking status distribution
+  const bookingStatusOption = useMemo(() => {
+    const completed = Number(displayData?.kpis?.completed || 0);
+    const cancelled = Number(displayData?.kpis?.cancelled || 0);
+    const total = Number(displayData?.kpis?.bookings || 0);
+    const pending = Math.max(0, total - completed - cancelled);
+    return {
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+      legend: { bottom: 0, textStyle: { color: '#64748b' } },
+      series: [
+        {
+          name: 'Bookings',
+          type: 'pie',
+          radius: ['40%', '70%'],
+          itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+          label: { show: false },
+          labelLine: { show: false },
+          data: [
+            { value: completed, name: 'Completed' },
+            { value: cancelled, name: 'Cancelled' },
+            { value: pending, name: 'Pending' },
+          ],
+        },
+      ],
+      color: ['#22c55e', '#ef4444', '#f59e0b'],
+    } as const;
+  }, [displayData]);
 
   const topMoviesOption = useMemo(() => {
-    const items = (data?.tops?.movies || []).slice(0, 10);
+    const items = (displayData?.tops?.movies || []).slice(0, 10);
     const names = items.map(m => m.title);
     const vals = items.map(m => Number(m.revenue || 0));
     return {
@@ -123,10 +228,10 @@ const SuperAdminAnalyticsPage: React.FC = () => {
         barWidth: 14,
       }],
     } as const;
-  }, [data]);
+  }, [displayData]);
 
   const topTheatersOption = useMemo(() => {
-    const items = (data?.tops?.theaters || []).slice(0, 10);
+    const items = (displayData?.tops?.theaters || []).slice(0, 10);
     const names = items.map(t => t.name);
     const vals = items.map(t => Number(t.revenue || 0));
     return {
@@ -149,7 +254,7 @@ const SuperAdminAnalyticsPage: React.FC = () => {
         barWidth: 14,
       }],
     } as const;
-  }, [data]);
+  }, [displayData]);
 
   const rangeOptions = [
     { value: '7', label: 'Last 7 days' },
@@ -262,7 +367,7 @@ const SuperAdminAnalyticsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card padding="lg">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Bookings Trend</h3>
-            {data?.trend && data.trend.length > 0 ? (
+            {displayData?.trend && displayData.trend.length > 0 ? (
               <EChart option={bookingsTrendOption as any} />
             ) : (
               <div className="text-gray-500 text-sm">No data in selected range.</div>
@@ -271,7 +376,7 @@ const SuperAdminAnalyticsPage: React.FC = () => {
 
           <Card padding="lg">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Theaters (Revenue)</h3>
-            {data?.tops?.theaters && data.tops.theaters.length > 0 ? (
+            {displayData?.tops?.theaters && displayData.tops.theaters.length > 0 ? (
               <EChart option={topTheatersOption as any} />
             ) : (
               <div className="text-gray-500 text-sm">No data available.</div>
@@ -279,14 +384,55 @@ const SuperAdminAnalyticsPage: React.FC = () => {
           </Card>
         </div>
 
+        {/* Revenue Trend & Status Trend */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card padding="lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Trend</h3>
+            {displayData?.revenueTrend && displayData.revenueTrend.length > 0 ? (
+              <EChart option={revenueTrendOption as any} />
+            ) : (
+              <div className="text-gray-500 text-sm">No revenue data in selected range.</div>
+            )}
+          </Card>
+          <Card padding="lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Status Trend</h3>
+            {displayData?.statusTrend && displayData.statusTrend.length > 0 ? (
+              <EChart option={statusTrendOption as any} />
+            ) : (
+              <div className="text-gray-500 text-sm">No status trend data.</div>
+            )}
+          </Card>
+        </div>
+
         <Card padding="lg">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Movies (Revenue)</h3>
-          {data?.tops?.movies && data.tops.movies.length > 0 ? (
+          {displayData?.tops?.movies && displayData.tops.movies.length > 0 ? (
             <EChart option={topMoviesOption as any} />
           ) : (
             <div className="text-gray-500 text-sm">No data available.</div>
           )}
         </Card>
+
+        {/* Pie Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card padding="lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Share by Top Movies</h3>
+            {displayData?.tops?.movies && displayData.tops.movies.length > 0 ? (
+              <EChart option={revenueShareOption as any} />
+            ) : (
+              <div className="text-gray-500 text-sm">No data available.</div>
+            )}
+          </Card>
+
+          <Card padding="lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Booking Status Distribution</h3>
+            {(Number(kpis.bookings) > 0) ? (
+              <EChart option={bookingStatusOption as any} />
+            ) : (
+              <div className="text-gray-500 text-sm">No bookings yet.</div>
+            )}
+          </Card>
+        </div>
 
         {/* Live Events Timeline */}
         <Card padding="lg">
