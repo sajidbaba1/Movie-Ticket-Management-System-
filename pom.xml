@@ -25,6 +25,16 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
+		<!-- Spring Security starter to provide security context, annotations, and auto-config -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		<!-- AOP support (often used with method security) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
 		<!-- Spring Security core for method-level annotations like @PreAuthorize -->
 		<dependency>
 			<groupId>org.springframework.security</groupId>
@@ -84,10 +94,10 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-messaging</artifactId>
 		</dependency>
-		<!-- Jackson module to handle Hibernate proxies/lazy loading (Jakarta for Spring Boot 3/Hibernate 6) -->
+		<!-- Jackson module to handle Hibernate proxies/lazy loading (compatible with Hibernate 6) -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.datatype</groupId>
-			<artifactId>jackson-datatype-hibernate5-jakarta</artifactId>
+			<artifactId>jackson-datatype-hibernate6</artifactId>
 		</dependency>
 		<!-- PDF generation -->
     <dependency>
